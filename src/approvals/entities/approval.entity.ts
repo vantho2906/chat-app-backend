@@ -17,9 +17,6 @@ export class Approval {
   @ManyToOne(() => Account, (account) => account.approvals)
   account: Account;
 
-  @ManyToOne(() => ChatRoom, (room) => room.approvals, {
-    cascade: true,
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => ChatRoom, (room) => room.approvals)
   room: ChatRoom;
 }

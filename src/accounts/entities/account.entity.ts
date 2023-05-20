@@ -65,7 +65,9 @@ export class Account {
   @JoinColumn()
   avatar: NetworkFile;
 
-  @OneToMany(() => Member, (member) => member.account)
+  @OneToMany(() => Member, (member) => member.account, {
+    cascade: true,
+  })
   roomMembers: Member[];
 
   @OneToMany(() => Approval, (approval) => approval.account)

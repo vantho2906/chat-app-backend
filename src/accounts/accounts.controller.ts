@@ -5,6 +5,7 @@ import {
   Get,
   HttpStatus,
   MaxFileSizeValidator,
+  Param,
   ParseFilePipe,
   Post,
   UploadedFile,
@@ -24,6 +25,17 @@ import { UpdateAccountInfoDto } from './dtos/update-account-info-dto';
 @Controller('accounts')
 export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
+
+  @Get('get-all/')
+  async getAll() {
+    const data = await this.accountsService.getAll();
+    return new ResponseObject(
+      HttpStatus.OK,
+      'Get all accounts success',
+      data,
+      null,
+    );
+  }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -84,5 +96,16 @@ export class AccountsController {
       updateInfo,
     );
     return new ResponseObject(HttpStatus.OK, 'Update Info success', data, null);
+  }
+
+  @Get('search-by-name-or-email/:keyword')
+  async searchByNameOrEmail(@Param('keyword') keyword: string) {
+    const [data, err] = await this.accountsService.searchByNameOrEmail(keyword);
+    return new ResponseObject(
+      HttpStatus.OK,
+      'Search by name or email success',
+      data,
+      null,
+    );
   }
 }

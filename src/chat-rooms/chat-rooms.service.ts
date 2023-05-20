@@ -13,6 +13,7 @@ import {
 import { Account } from 'accounts/entities/account.entity';
 import { Member } from 'members/entities/member.entity';
 import { NetworkFile } from 'network-files/entities/networkFile.entity';
+import { GoogleApiService } from 'google-api/google-api.service';
 
 @Injectable()
 export class ChatRoomsService {
@@ -31,6 +32,8 @@ export class ChatRoomsService {
 
     @InjectRepository(NetworkFile)
     private readonly networkFileRepository: Repository<NetworkFile>,
+
+    private readonly googleApiService: GoogleApiService,
   ) {}
 
   async createRoom(
@@ -117,6 +120,7 @@ export class ChatRoomsService {
         avatar: true,
       },
       select: {
+        id: true,
         fname: true,
         lname: true,
         isActive: true,
@@ -128,11 +132,12 @@ export class ChatRoomsService {
     const avatarUrls: string[] = [];
     let name: string = null;
     let index = 0;
+    console.log(members);
     while (index < 6 && index < members.length) {
       if (members[index].id != self.id) {
-        index++;
         name += members[index].fname + ' ';
       }
+      index++;
     }
     index = 0;
     while (index < 2 && index < members.length) {
@@ -144,10 +149,18 @@ export class ChatRoomsService {
     const membersInRoom = [];
     members.map((member) => {
       if (!member.isActive) inActiveAccounts.push(member);
-      membersInRoom.push({
-        nickname: member.lname + ' ' + member.fname,
-        account: { id: member.id },
-      });
+      if (member.id == self.id) {
+        membersInRoom.push({
+          nickname: member.lname + ' ' + member.fname,
+          account: { id: member.id },
+          role: MemberRoleEnum.ADMIN,
+        });
+      } else {
+        membersInRoom.push({
+          nickname: member.lname + ' ' + member.fname,
+          account: { id: member.id },
+        });
+      }
     });
     if (inActiveAccounts.length > 0)
       return [inActiveAccounts, 'The following accounts are not active'];
@@ -187,6 +200,7 @@ export class ChatRoomsService {
         room.name = opponent.lname + ' ' + opponent.fname;
       } else {
         let index = 0;
+        room.avatarUrls = [];
         while (index < 2 && index < room.members.length) {
           if (room.members[index].account.id != self.id) {
             index++;
@@ -257,5 +271,36 @@ export class ChatRoomsService {
       },
     });
     return [members, null];
+  }
+
+  async deleteRoom(self: Account, roomId: number) {
+    const room = await this.chatRoomRepository.findOne({
+      where: { id: roomId, members: { account: { id: self.id } } },
+      relations: {
+        messages: { files: true },
+        members: true,
+      },
+    });
+    console.log(room.members);
+    if (!room) return [null, 'Room not found'];
+    if (room.type != ChatRoomTypeEnum.MULTIPLE_USERS)
+      return [null, 'Room must be kind of multiple users'];
+    if (room.members[0].role != MemberRoleEnum.ADMIN)
+      return [null, 'You are not admin'];
+    //delete all msgs in room
+    const allMsgsOfRoom = room.messages;
+    // const fileIds = [];
+    if (allMsgsOfRoom.length > 0) {
+      const fileIdsOnDrive = [];
+      for (const msg of allMsgsOfRoom) {
+        for (const file of msg.files) {
+          fileIdsOnDrive.push(file.fileIdOnDrive);
+          // fileIds.push(file.id);
+        }
+      }
+      await this.googleApiService.deleteMultipleFiles(fileIdsOnDrive);
+    }
+    await this.chatRoomRepository.delete(room.id);
+    return [true, null];
   }
 }

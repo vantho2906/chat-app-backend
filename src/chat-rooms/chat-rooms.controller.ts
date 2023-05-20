@@ -155,4 +155,22 @@ export class ChatRoomsController {
       err,
     );
   }
+
+  @Post('delete-room/:roomId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async deleteRoom(
+    @CurrentAccount() self: Account,
+    @Param('roomId') roomId: number,
+  ) {
+    const [data, err] = await this.chatRoomsService.deleteRoom(self, roomId);
+    if (err)
+      return new ResponseObject(
+        HttpStatus.BAD_REQUEST,
+        'Delete room failed',
+        data,
+        err,
+      );
+    return new ResponseObject(HttpStatus.OK, 'Delete room success', data, err);
+  }
 }

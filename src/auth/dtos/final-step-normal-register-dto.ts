@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, Length } from 'class-validator';
+import { IsEmail, IsNotEmpty, Length, Matches } from 'class-validator';
 
 export class FinalStepNormalRegisterDto {
   @ApiProperty({
@@ -11,10 +11,16 @@ export class FinalStepNormalRegisterDto {
 
   @ApiProperty({ example: 'Thọ' })
   @IsNotEmpty()
+  @Matches(/^[a-zA-Z]+(?:[ ]?[a-zA-Z]*)*$/, {
+    message: 'First name only contains alphabet characters and spaces',
+  })
   fname: string;
 
   @ApiProperty({ example: 'Trần Văn' })
   @IsNotEmpty()
+  @Matches(/^[a-zA-Z]+(?:[ ]?[a-zA-Z]*)*$/, {
+    message: 'Last name only contains alphabet characters and spaces',
+  })
   lname: string;
 
   @ApiProperty()

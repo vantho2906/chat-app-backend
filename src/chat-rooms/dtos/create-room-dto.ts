@@ -7,7 +7,11 @@ export class CreateRoomDto {
   @IsNotEmpty({ each: true })
   memberIdList: string[];
 
-  @ApiProperty({ enum: ChatRoomTypeEnum, example: ChatRoomTypeEnum.ONE_ON_ONE })
+  @ApiProperty({
+    enum: ChatRoomTypeEnum,
+    example: ChatRoomTypeEnum.ONE_ON_ONE,
+    type: 'enum',
+  })
   @IsEnum(ChatRoomTypeEnum)
   @IsNotEmpty()
   type: ChatRoomTypeEnum;

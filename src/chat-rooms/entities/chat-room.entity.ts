@@ -31,7 +31,9 @@ export class ChatRoom {
 
   avatarUrls: string[];
 
-  @OneToMany(() => Approval, (approval) => approval.room)
+  @OneToMany(() => Approval, (approval) => approval.room, {
+    onDelete: 'CASCADE',
+  })
   approvals: Approval[];
 
   @OneToMany(() => Member, (member) => member.room, {
@@ -39,6 +41,9 @@ export class ChatRoom {
   })
   members: Member[];
 
-  @OneToMany(() => Message, (msg) => msg.room)
+  @OneToMany(() => Message, (msg) => msg.room, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   messages: Message[];
 }

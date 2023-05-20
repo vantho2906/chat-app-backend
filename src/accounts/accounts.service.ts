@@ -21,7 +21,7 @@ export class AccountsService {
 
   async getByEmail(email: string) {
     return await this.accountRepository.findOne({
-      where: { email, isActive: true },
+      where: { email: email.trim().toLowerCase(), isActive: true },
     });
   }
 
@@ -32,6 +32,10 @@ export class AccountsService {
       },
       where: { id, isActive: true },
     });
+  }
+
+  async getAll() {
+    return await this.accountRepository.find();
   }
 
   async updateAvatar(account: Account, file: Express.Multer.File) {
@@ -56,5 +60,31 @@ export class AccountsService {
     if (dob && dob != self.dob) self.dob = dob;
     const result = await this.accountRepository.save(self);
     return [result, null];
+  }
+
+  async searchByNameOrEmail(keyword: string) {
+    const emailReg = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+    if (keyword.trim().match(emailReg)) {
+      const account = await this.accountRepository.findOne({
+        where: {
+          email: keyword.trim().toLowerCase(),
+        },
+        relations: {
+          avatar: true,
+        },
+      });
+      return [account, null];
+    }
+    keyword = '%' + keyword.toLowerCase().trim().split(' ').join('%') + '%';
+    console.log(keyword);
+    const accounts = await this.accountRepository
+      .createQueryBuilder('account')
+      .innerJoin('account.avatar', 'avatar')
+      .where(`LOWER(CONCAT(account.lname, ' ', account.fname)) LIKE :keyword`, {
+        keyword: keyword,
+      })
+      .andWhere('account.isActive = :true', { true: true })
+      .getMany();
+    return [accounts, null];
   }
 }

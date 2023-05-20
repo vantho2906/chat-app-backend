@@ -22,11 +22,11 @@ export class Member {
   @CreateDateColumn()
   joinedAt: Date;
 
-  @ManyToOne(() => Account, (account) => account.roomMembers, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => Account, (account) => account.roomMembers)
   account: Account;
 
-  @ManyToOne(() => ChatRoom, (room) => room.members)
+  @ManyToOne(() => ChatRoom, (room) => room.members, {
+    onDelete: 'CASCADE',
+  })
   room: ChatRoom;
 }
