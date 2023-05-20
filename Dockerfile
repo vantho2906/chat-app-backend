@@ -1,9 +1,8 @@
-FROM node:12-alpine
+FROM node:16-alpine
 WORKDIR /app
-COPY ["package.json", "package-lock.json", "./"]
+COPY ["package.json","./"]
 RUN npm install
-COPY .env-local .env
+COPY .env-deploy .env
 COPY . .
-ENV PORT =3307
 RUN npm run build
-CMD ["npm", "run", "start:prod"]
+CMD ["sh", "-c", "npm run typeorm:gen && npm run typeorm:run && npm run start:prod"]
