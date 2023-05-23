@@ -58,21 +58,6 @@ export class AuthController {
     );
   }
 
-  @Post('register-by-google/:credential')
-  @ApiParam({ name: 'credential' })
-  async googleRegister(@Param('credential') credential: string) {
-    const [account, err] = await this.authService.googleRegister(credential);
-    if (err) {
-      return new ResponseObject(
-        HttpStatus.BAD_REQUEST,
-        'Register failed',
-        null,
-        err,
-      );
-    }
-    return new ResponseObject(HttpStatus.OK, 'Register success', account, null);
-  }
-
   @Post('normal-login')
   @ApiBody({ type: NormalLoginDto, required: true })
   async normalLogin(@Body() info: NormalLoginDto) {

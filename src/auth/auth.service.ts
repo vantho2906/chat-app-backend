@@ -55,41 +55,25 @@ export class AuthService {
 
     // Check database
     const account = await this.accountsService.getByEmail(email);
-    if (!account || account.signInWay != SignInWay.GOOGLE) {
-      return [null, 'Account not found'];
-    }
-    if (!account.isActive) return [null, 'Account is blocked'];
-
-    // Sign JWT
+    if (!account) {
+      const imageUrl = payload.picture;
+      const response = await this.httpService.get(imageUrl).toPromise();
+      const contentType = response.headers['content-type'];
+      const accountCreate = await this.accountRepository.save({
+        email,
+        signInWay: SignInWay.GOOGLE,
+        fname: payload.given_name,
+        lname: payload.family_name,
+        avatar: {
+          mimeType: contentType,
+          url: payload.picture,
+        },
+      });
+      const token = this.jwtService.sign({ sub: accountCreate.id });
+      return [token, null];
+    } else if (!account.isActive) return [null, 'Account is blocked'];
     const token = this.jwtService.sign({ sub: account.id });
     return [token, null];
-  }
-
-  async googleRegister(credential: string) {
-    const [payload, err] = await this.getInfoFromGoogle(credential);
-    if (err) {
-      return [null, err];
-    }
-    const email = payload.email;
-
-    const account = await this.accountsService.getByEmail(email);
-    if (account) {
-      return [null, 'Account existed'];
-    }
-    const imageUrl = payload.picture;
-    const response = await this.httpService.get(imageUrl).toPromise();
-    const contentType = response.headers['content-type'];
-    const accountCreate = await this.accountRepository.save({
-      email,
-      signInWay: SignInWay.GOOGLE,
-      fname: payload.given_name,
-      lname: payload.family_name,
-      avatar: {
-        mimeType: contentType,
-        url: payload.picture,
-      },
-    });
-    return [accountCreate, null];
   }
 
   async normalLogin(info: NormalLoginDto) {
