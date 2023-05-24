@@ -5,7 +5,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { MemberRoleEnum } from '../../etc/enum';
+import { MemberRoleEnum } from '../../etc/enums';
 import { Account } from '../../accounts/entities/account.entity';
 import { ChatRoom } from '../../chat-rooms/entities/chat-room.entity';
 @Entity()
@@ -15,6 +15,9 @@ export class Member {
 
   @Column({ type: 'enum', enum: MemberRoleEnum, default: MemberRoleEnum.USER })
   role: MemberRoleEnum;
+
+  @Column({ default: false })
+  isRoomLimited: boolean;
 
   @Column()
   nickname: string;

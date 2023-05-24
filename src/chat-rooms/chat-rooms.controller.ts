@@ -16,7 +16,7 @@ import { Account } from 'accounts/entities/account.entity';
 import { CreateRoomDto } from './dtos/create-room-dto';
 import { ApiBearerAuth, ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
 import ResponseObject from 'etc/response-object';
-import { FileCategoryEnum } from 'etc/enum';
+import { FileCategoryEnum } from 'etc/enums';
 import { UpdateRoomNameDto } from './dtos/update-room-name.dto';
 
 @ApiTags('chat-rooms')
@@ -90,7 +90,7 @@ export class ChatRoomsController {
       return new ResponseObject(
         HttpStatus.BAD_REQUEST,
         'Get all files failed',
-        data,
+        null,
         err,
       );
     return new ResponseObject(
@@ -119,7 +119,7 @@ export class ChatRoomsController {
       return new ResponseObject(
         HttpStatus.BAD_REQUEST,
         'Update room name failed',
-        data,
+        null,
         err,
       );
     return new ResponseObject(
@@ -145,7 +145,7 @@ export class ChatRoomsController {
       return new ResponseObject(
         HttpStatus.BAD_REQUEST,
         'Get room members failed',
-        data,
+        null,
         err,
       );
     return new ResponseObject(
@@ -161,16 +161,62 @@ export class ChatRoomsController {
   @ApiBearerAuth()
   async deleteRoom(
     @CurrentAccount() self: Account,
-    @Param('roomId') roomId: number,
+    @Param('roomId', ParseIntPipe) roomId: number,
   ) {
     const [data, err] = await this.chatRoomsService.deleteRoom(self, roomId);
     if (err)
       return new ResponseObject(
         HttpStatus.BAD_REQUEST,
         'Delete room failed',
-        data,
+        null,
         err,
       );
     return new ResponseObject(HttpStatus.OK, 'Delete room success', data, err);
+  }
+
+  @Post('toggle-approval-feature/:roomId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async toggleApprovalFeature(
+    @CurrentAccount() self: Account,
+    @Param('roomId', ParseIntPipe) roomId: number,
+  ) {
+    // data is array of msgs
+    const [data, err] = await this.chatRoomsService.toggleApprovalFeature(
+      self,
+      roomId,
+    );
+    if (err)
+      return new ResponseObject(
+        HttpStatus.BAD_REQUEST,
+        'Toggle approval feature failed',
+        null,
+        err,
+      );
+    return new ResponseObject(
+      HttpStatus.OK,
+      'Toggle approval feature success',
+      data,
+      err,
+    );
+  }
+
+  @Post('leave-room/:roomId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async leaveRoom(
+    @CurrentAccount() self: Account,
+    @Param('roomId', ParseIntPipe) roomId: number,
+  ) {
+    // data is msg
+    const [data, err] = await this.chatRoomsService.leaveRoom(self, roomId);
+    if (err)
+      return new ResponseObject(
+        HttpStatus.BAD_REQUEST,
+        'Leave room failed',
+        null,
+        err,
+      );
+    return new ResponseObject(HttpStatus.OK, 'Leave room success', data, err);
   }
 }

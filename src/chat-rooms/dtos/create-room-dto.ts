@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty } from 'class-validator';
-import { ChatRoomTypeEnum } from 'etc/enum';
+import { ChatRoomTypeEnum } from 'etc/enums';
 
 export class CreateRoomDto {
   @ApiProperty()

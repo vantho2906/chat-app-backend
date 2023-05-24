@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsDate, IsEnum, ValidateIf } from 'class-validator';
-import { GenderEnum } from 'etc/enum';
+import { GenderEnum } from 'etc/enums';
 
 export class UpdateAccountInfoDto {
   @ApiProperty({

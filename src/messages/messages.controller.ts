@@ -23,7 +23,7 @@ import {
 } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { FileUploadPipe } from 'etc/file-upload.pipe';
-import { FileTypeAllowEnum } from 'etc/enum';
+import { FileTypeAllowEnum } from 'etc/enums';
 import { CreateMessageDto } from './dtos/create-message.dto';
 import { JwtAuthGuard } from 'auth/jwt-auth.guard';
 import CurrentAccount from 'decorators/current-account.decorator';

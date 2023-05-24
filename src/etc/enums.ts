@@ -27,7 +27,7 @@ export enum MemberRoleEnum {
 
 export enum MessageTypeEnum {
   NORMAL = 'Normal',
-  CALLING = 'Calling',
+  NOTIFICATION = 'Notification',
 }
 
 export enum FriendStatus {
@@ -79,4 +79,10 @@ export enum FileTypeOtherEnum {
 export enum FileCategoryEnum {
   MEDIA = 'Media',
   OTHER = 'Other',
+}
+
+export enum NotificationType {
+  APPROVAL = 'Approval',
+  MESSAGE = 'Message',
+  FRIEND_REQUEST = 'Friend Request',
 }

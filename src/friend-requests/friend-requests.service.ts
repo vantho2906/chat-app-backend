@@ -4,7 +4,7 @@ import { AccountsService } from 'accounts/accounts.service';
 import { Account } from 'accounts/entities/account.entity';
 import { In, Repository } from 'typeorm';
 import { FriendRequest } from './entities/friendRequest.entity';
-import { FriendStatus } from 'etc/enum';
+import { FriendStatus } from 'etc/enums';
 import { Friend } from 'friends/entities/friend.entity';
 
 @Injectable()

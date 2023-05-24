@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Message } from './entities/message.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MessageTypeEnum } from 'etc/enum';
+import { MessageTypeEnum } from 'etc/enums';
 import { NetworkFile } from 'network-files/entities/networkFile.entity';
 import { Account } from 'accounts/entities/account.entity';
 import { ChatRoom } from 'chat-rooms/entities/chat-room.entity';
@@ -103,10 +103,12 @@ export class MessagesService {
       files: msgFiles,
     });
     await this.messageRepository.save(msg);
-    msg.files = msg.files.map((file: NetworkFile) => {
-      delete file.account;
-      return file;
-    });
+    if (msg.files && msg.files.length > 0) {
+      msg.files = msg.files.map((file: NetworkFile) => {
+        delete file.account;
+        return file;
+      });
+    }
     room.updatedAt = new Date();
     await this.chatRoomRepository.save(room);
     return [msg, null];

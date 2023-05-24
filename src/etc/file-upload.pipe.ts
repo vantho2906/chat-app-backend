@@ -3,7 +3,7 @@ import {
   BadRequestException,
   PipeTransform,
 } from '@nestjs/common';
-import { FileTypeAllowEnum } from './enum';
+import { FileTypeAllowEnum } from './enums';
 
 interface FileUploadOptions {
   maxCount?: number;

@@ -6,18 +6,17 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   ManyToMany,
-  JoinTable,
   JoinColumn,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { GenderEnum, RoleEnum, SignInWay } from '../../etc/enum';
+import { GenderEnum, RoleEnum } from '../../etc/enums';
 import { NetworkFile } from '../../network-files/entities/networkFile.entity';
 import { Member } from '../../members/entities/member.entity';
 import { Approval } from '../../approvals/entities/approval.entity';
 import { FriendRequest } from '../../friend-requests/entities/friendRequest.entity';
 import { Message } from '../../messages/entities/message.entity';
-import { Notification } from '../../notifications/entities/notification.entity';
 import { IsNotEmpty } from 'class-validator';
+import { NotiEndUser } from '../../noti-end-users/entities/noti-end-user.entity';
 
 @Entity()
 export class Account {
@@ -30,8 +29,8 @@ export class Account {
   @Column({ nullable: true })
   password: string;
 
-  @Column({ type: 'enum', enum: SignInWay })
-  signInWay: SignInWay;
+  // @Column({ type: 'enum', enum: SignInWay })
+  // signInWay: SignInWay;
 
   @Column({ type: 'enum', enum: RoleEnum, default: RoleEnum.USER })
   role: RoleEnum;
@@ -82,8 +81,8 @@ export class Account {
   @OneToMany(() => Message, (msg) => msg.sender)
   sendingMsgs: Message[];
 
-  @ManyToMany(() => Notification, (notification) => notification.receivers)
-  notifications: Notification[];
+  @ManyToMany(() => NotiEndUser, (noti) => noti.receiver)
+  notiEndUsers: NotiEndUser[];
 
   @ManyToMany(() => Account)
   blocks: Account[];

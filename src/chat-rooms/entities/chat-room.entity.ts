@@ -5,7 +5,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ChatRoomTypeEnum } from '../../etc/enum';
+import { ChatRoomTypeEnum } from '../../etc/enums';
 import { Member } from '../../members/entities/member.entity';
 import { Approval } from '../../approvals/entities/approval.entity';
 import { Message } from '../../messages/entities/message.entity';
@@ -26,10 +26,10 @@ export class ChatRoom {
   @CreateDateColumn()
   updatedAt: Date;
 
-  @Column({ default: false })
-  isLimited: boolean;
-
   avatarUrls: string[];
+
+  @Column({ default: false })
+  isApprovalEnable: boolean;
 
   @OneToMany(() => Approval, (approval) => approval.room, {
     onDelete: 'CASCADE',

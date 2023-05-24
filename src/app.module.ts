@@ -17,6 +17,7 @@ import { GoogleApiModule } from './google-api/google-api.module';
 import TestNestjsDataSource from './database/datasource';
 import { GatewayModule } from 'gateway/gateway.module';
 import { FriendsModule } from './friends/friends.module';
+import { NotiEndUsersModule } from './noti-end-users/noti-end-users.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { FriendsModule } from './friends/friends.module';
     GoogleApiModule,
     GatewayModule,
     FriendsModule,
+    NotiEndUsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

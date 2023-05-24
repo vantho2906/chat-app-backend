@@ -116,11 +116,13 @@ export class AuthController {
   @ApiBody({ type: ChangePasswordDto })
   async changePassword(
     @CurrentAccount() self: Account,
-    @Body() { newPassword }: ChangePasswordDto,
+    @Body() { oldPassword, newPassword, confirmNewPassword }: ChangePasswordDto,
   ) {
     const [data, err] = await this.authService.changePassword(
       self,
+      oldPassword,
       newPassword,
+      confirmNewPassword,
     );
     if (err)
       return new ResponseObject(

@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import { AccountsService } from '../accounts/accounts.service';
 import TestNestjsConfig from '../etc/config';
-import { SignInWay } from 'etc/enum';
+import { SignInWay } from 'etc/enums';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Account } from 'accounts/entities/account.entity';
 import { Repository } from 'typeorm';
@@ -78,11 +78,7 @@ export class AuthService {
 
   async normalLogin(info: NormalLoginDto) {
     const account = await this.accountsService.getByEmail(info.email);
-    if (
-      !account ||
-      account.signInWay != SignInWay.NORMAL ||
-      !account.checkIfUnencryptedPasswordIsValid(info.password)
-    )
+    if (!account || !account.checkIfUnencryptedPasswordIsValid(info.password))
       return [null, 'Account not exist or wrong password!'];
     if (!account.isActive) return [null, 'Account is blocked'];
     const token = this.jwtService.sign({ sub: account.id });
@@ -115,7 +111,6 @@ export class AuthService {
     const accountCreate = this.accountRepository.create({
       email: info.email,
       password: info.password,
-      signInWay: SignInWay.NORMAL,
       fname: info.fname.trim(),
       lname: info.lname.trim(),
       avatar: {
@@ -129,14 +124,23 @@ export class AuthService {
     return [accountCreate, null];
   }
 
-  async changePassword(self: Account, newPassword: string) {
-    if (self.signInWay == SignInWay.GOOGLE)
-      return [null, 'Google login can not change password'];
+  async changePassword(
+    self: Account,
+    oldPassword: string,
+    newPassword: string,
+    confirmNewPassword: string,
+  ) {
     const selfWithPassword = await this.accountRepository.findOne({
       where: { id: self.id },
     });
-    if (selfWithPassword.checkIfUnencryptedPasswordIsValid(newPassword.trim()))
-      return [null, 'Same with old password'];
+    if (selfWithPassword.password) {
+      if (
+        !selfWithPassword.checkIfUnencryptedPasswordIsValid(oldPassword.trim())
+      )
+        return [null, 'Old password not correct'];
+    }
+    if (newPassword != confirmNewPassword)
+      return [null, 'Confirm password not correct'];
     selfWithPassword.password = newPassword.trim();
     selfWithPassword.hashPassword();
     await this.accountRepository.save(selfWithPassword);

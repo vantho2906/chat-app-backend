@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { Account } from '../../accounts/entities/account.entity';
 import { ChatRoom } from '../../chat-rooms/entities/chat-room.entity';
-import { MessageTypeEnum } from '../../etc/enum';
+import { MessageTypeEnum } from '../../etc/enums';
 import { React } from '../../reacts/entities/react.entity';
 import { NetworkFile } from '../../network-files/entities/networkFile.entity';
 @Entity()

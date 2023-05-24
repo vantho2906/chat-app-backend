@@ -15,5 +15,6 @@ import { NetworkFile } from 'network-files/entities/networkFile.entity';
   ],
   controllers: [MessagesController],
   providers: [MessagesService],
+  exports: [MessagesService],
 })
 export class MessagesModule {}

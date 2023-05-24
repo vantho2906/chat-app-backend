@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ChatRoom } from './entities/chat-room.entity';
-import { In, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { Message } from 'messages/entities/message.entity';
 import {
   ChatRoomTypeEnum,
@@ -9,11 +9,15 @@ import {
   FileTypeMediaEnum,
   FileTypeOtherEnum,
   MemberRoleEnum,
-} from 'etc/enum';
+  MessageTypeEnum,
+} from 'etc/enums';
 import { Account } from 'accounts/entities/account.entity';
 import { Member } from 'members/entities/member.entity';
 import { NetworkFile } from 'network-files/entities/networkFile.entity';
 import { GoogleApiService } from 'google-api/google-api.service';
+import { convertMemberRoomRole } from 'etc/convert-member-room-role';
+import { MessagesService } from 'messages/messages.service';
+import { Approval } from 'approvals/entities/approval.entity';
 
 @Injectable()
 export class ChatRoomsService {
@@ -30,10 +34,15 @@ export class ChatRoomsService {
     @InjectRepository(Member)
     private readonly memberRepository: Repository<Member>,
 
+    @InjectRepository(Approval)
+    private readonly approvalRepository: Repository<Approval>,
+
     @InjectRepository(NetworkFile)
     private readonly networkFileRepository: Repository<NetworkFile>,
 
     private readonly googleApiService: GoogleApiService,
+
+    private readonly messagesService: MessagesService,
   ) {}
 
   async createRoom(
@@ -130,15 +139,17 @@ export class ChatRoomsService {
       return [null, 'Some accounts not found'];
     const inActiveAccounts: Account[] = [];
     const avatarUrls: string[] = [];
-    let name: string = null;
+    let name = '';
     let index = 0;
     console.log(members);
     while (index < 6 && index < members.length) {
       if (members[index].id != self.id) {
-        name += members[index].fname + ' ';
+        name += members[index].fname + ', ';
       }
       index++;
     }
+    name = name.slice(0, name.length - 2);
+    console.log(name);
     index = 0;
     while (index < 2 && index < members.length) {
       if (members[index].id != self.id) {
@@ -167,9 +178,9 @@ export class ChatRoomsService {
     const room = await this.chatRoomRepository.create({
       type,
       name,
-      avatarUrls,
       members: membersInRoom,
     });
+    room.avatarUrls = avatarUrls;
     await this.chatRoomRepository.save(room);
     return [room, null];
   }
@@ -178,7 +189,7 @@ export class ChatRoomsService {
     const selfMembers: Member[] = await this.memberRepository.find({
       where: {
         account: { id: self.id },
-        room: { isLimited: false },
+        isRoomLimited: false,
       },
       relations: {
         room: { members: { account: { avatar: true } } },
@@ -203,12 +214,12 @@ export class ChatRoomsService {
         room.avatarUrls = [];
         while (index < 2 && index < room.members.length) {
           if (room.members[index].account.id != self.id) {
-            index++;
             room.avatarUrls.push(room.members[index].account.avatar.url);
           }
+          index++;
         }
       }
-      room.members = null;
+      delete room.members;
       return room;
     });
     return [rooms, null];
@@ -266,9 +277,6 @@ export class ChatRoomsService {
       relations: {
         account: { avatar: true },
       },
-      select: {
-        account: { password: false },
-      },
     });
     return [members, null];
   }
@@ -281,7 +289,6 @@ export class ChatRoomsService {
         members: true,
       },
     });
-    console.log(room.members);
     if (!room) return [null, 'Room not found'];
     if (room.type != ChatRoomTypeEnum.MULTIPLE_USERS)
       return [null, 'Room must be kind of multiple users'];
@@ -302,5 +309,115 @@ export class ChatRoomsService {
     }
     await this.chatRoomRepository.delete(room.id);
     return [true, null];
+  }
+
+  async toggleApprovalFeature(self: Account, roomId: number) {
+    const selfMember = await this.memberRepository.findOne({
+      where: { account: { id: self.id }, room: { id: roomId } },
+      relations: {
+        room: true,
+      },
+    });
+    if (!selfMember) return [null, 'Room not found'];
+    const room = selfMember.room;
+    if (room.type != ChatRoomTypeEnum.MULTIPLE_USERS)
+      return [null, 'Room type must be kind of multiple users'];
+    if (selfMember.role == MemberRoleEnum.USER)
+      return [null, 'You dont have permission'];
+    let msgNotiText;
+    if (room.isApprovalEnable) {
+      room.isApprovalEnable = false;
+      msgNotiText = `${self.lname} ${self.fname} turn off approval feature`;
+    } else {
+      room.isApprovalEnable = true;
+      msgNotiText = `${self.lname} ${self.fname} turn on approval feature`;
+    }
+    await this.chatRoomRepository.save(room);
+    const msgs = [];
+    const [msg, err] = await this.messagesService.addMsg(
+      MessageTypeEnum.NOTIFICATION,
+      null,
+      roomId,
+      msgNotiText,
+      null,
+    );
+    msgs.push(msg);
+    if (!room.isApprovalEnable) {
+      const approvals = await this.approvalRepository.find({
+        where: { room: { id: roomId } },
+        relations: {
+          account: true,
+        },
+      });
+      const newMembers: Member[] = [];
+      if (approvals.length > 0) {
+        const approvalIds: number[] = [];
+        let approveMsgText = '';
+        for (const approval of approvals) {
+          const member = new Member();
+          member.account = approval.account;
+          member.nickname =
+            approval.account.lname + ' ' + approval.account.fname;
+          member.room = room;
+          newMembers.push(member);
+          approvalIds.push(approval.id);
+          approveMsgText +=
+            approval.account.lname + ' ' + approval.account.fname + ', ';
+        }
+        // delete approvals
+        await this.approvalRepository.delete(approvalIds);
+        // add members
+        await this.memberRepository.save(newMembers);
+        // delete , at the end of text message
+        approveMsgText = approveMsgText.slice(0, approveMsgText.length - 2);
+        approveMsgText += 'entered room';
+        const [msg, err] = await this.messagesService.addMsg(
+          MessageTypeEnum.NOTIFICATION,
+          null,
+          roomId,
+          approveMsgText,
+          null,
+        );
+        msgs.push(msg);
+      }
+    }
+    return [msgs, null];
+  }
+
+  async leaveRoom(self: Account, roomId: number) {
+    const selfMember = await this.memberRepository.findOne({
+      where: { account: { id: self.id }, room: { id: roomId } },
+      relations: {
+        room: { members: true },
+      },
+    });
+    if (!selfMember) return [null, 'Room not found'];
+    if (selfMember.room.type != ChatRoomTypeEnum.MULTIPLE_USERS)
+      return [null, 'Room type must be kind of multiple users'];
+    if (selfMember.room.members.length == 1) {
+      await this.deleteRoom(self, roomId);
+      return [true, null];
+    }
+    if (selfMember.role == MemberRoleEnum.ADMIN) {
+      const members = await this.memberRepository.find({
+        where: { account: { id: Not(self.id) }, room: { id: roomId } },
+        order: {
+          //put role vice in front
+          role: 'DESC',
+        },
+      });
+      members[0].role = MemberRoleEnum.ADMIN;
+      await this.memberRepository.save([members[0]]);
+    }
+    await this.memberRepository.delete(selfMember.id);
+    //create message
+    const [msg, err] = await this.messagesService.addMsg(
+      MessageTypeEnum.NOTIFICATION,
+      null,
+      roomId,
+      `${self.fname} ${self.lname} left room`,
+      null,
+    );
+    return [msg, null];
   }
 }
