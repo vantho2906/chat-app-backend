@@ -13,14 +13,14 @@ import { Message } from '../../messages/entities/message.entity';
 import { FriendRequest } from '../../friend-requests/entities/friendRequest.entity';
 import { NotiEndUser } from '../../noti-end-users/entities/noti-end-user.entity';
 import { Approval } from '../../approvals/entities/approval.entity';
-import { NotificationType } from '../../etc/enums';
+import { NotificationTypeEnum } from '../../etc/enums';
 @Entity()
 export class Notification {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
-  type: NotificationType;
+  type: NotificationTypeEnum;
 
   @Column()
   content: string;

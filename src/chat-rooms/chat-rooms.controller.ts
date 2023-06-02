@@ -18,6 +18,7 @@ import { ApiBearerAuth, ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
 import ResponseObject from 'etc/response-object';
 import { FileCategoryEnum } from 'etc/enums';
 import { UpdateRoomNameDto } from './dtos/update-room-name.dto';
+import { Message } from 'messages/entities/message.entity';
 
 @ApiTags('chat-rooms')
 @Controller('chat-rooms')
@@ -62,6 +63,32 @@ export class ChatRoomsController {
     return new ResponseObject(
       HttpStatus.OK,
       'Get all rooms success',
+      data,
+      err,
+    );
+  }
+
+  @Get('get-all-room-members/:roomId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getAllRoomMembers(
+    @CurrentAccount() self: Account,
+    @Param('roomId') roomId: number,
+  ) {
+    const [data, err] = await this.chatRoomsService.getAllRoomMembers(
+      self,
+      roomId,
+    );
+    if (err)
+      return new ResponseObject(
+        HttpStatus.BAD_REQUEST,
+        'Get room members failed',
+        null,
+        err,
+      );
+    return new ResponseObject(
+      HttpStatus.OK,
+      'Get room members success',
       data,
       err,
     );
@@ -130,32 +157,6 @@ export class ChatRoomsController {
     );
   }
 
-  @Get('get-all-room-members/:roomId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  async getAllRoomMembers(
-    @CurrentAccount() self: Account,
-    @Param('roomId') roomId: number,
-  ) {
-    const [data, err] = await this.chatRoomsService.getAllRoomMembers(
-      self,
-      roomId,
-    );
-    if (err)
-      return new ResponseObject(
-        HttpStatus.BAD_REQUEST,
-        'Get room members failed',
-        null,
-        err,
-      );
-    return new ResponseObject(
-      HttpStatus.OK,
-      'Get room members success',
-      data,
-      err,
-    );
-  }
-
   @Post('delete-room/:roomId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -193,9 +194,17 @@ export class ChatRoomsController {
         null,
         err,
       );
+    const msgs = data as Message[];
+    if (msgs[0].text.includes('on'))
+      return new ResponseObject(
+        HttpStatus.OK,
+        'Turn on approval feature success',
+        data,
+        err,
+      );
     return new ResponseObject(
       HttpStatus.OK,
-      'Toggle approval feature success',
+      'Turn off approval feature success',
       data,
       err,
     );

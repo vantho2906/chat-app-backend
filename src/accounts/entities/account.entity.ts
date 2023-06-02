@@ -29,9 +29,6 @@ export class Account {
   @Column({ nullable: true })
   password: string;
 
-  // @Column({ type: 'enum', enum: SignInWay })
-  // signInWay: SignInWay;
-
   @Column({ type: 'enum', enum: RoleEnum, default: RoleEnum.USER })
   role: RoleEnum;
 
@@ -58,11 +55,8 @@ export class Account {
   @Column({ default: true })
   isActive: boolean;
 
-  @OneToOne(() => NetworkFile, (file) => file.account, {
-    cascade: true,
-  })
-  @JoinColumn()
-  avatar: NetworkFile;
+  @Column({ nullable: true })
+  avatarUrl: string;
 
   @OneToMany(() => Member, (member) => member.account, {
     cascade: true,

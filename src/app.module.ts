@@ -15,7 +15,7 @@ import { AuthModule } from './auth/auth.module';
 import { OtpsModule } from './otps/otps.module';
 import { GoogleApiModule } from './google-api/google-api.module';
 import TestNestjsDataSource from './database/datasource';
-import { GatewayModule } from 'gateway/gateway.module';
+import { SocketModule } from 'socket/socket.module';
 import { FriendsModule } from './friends/friends.module';
 import { NotiEndUsersModule } from './noti-end-users/noti-end-users.module';
 
@@ -34,7 +34,7 @@ import { NotiEndUsersModule } from './noti-end-users/noti-end-users.module';
     AuthModule,
     OtpsModule,
     GoogleApiModule,
-    GatewayModule,
+    SocketModule,
     FriendsModule,
     NotiEndUsersModule,
   ],

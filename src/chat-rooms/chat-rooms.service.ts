@@ -15,7 +15,6 @@ import { Account } from 'accounts/entities/account.entity';
 import { Member } from 'members/entities/member.entity';
 import { NetworkFile } from 'network-files/entities/networkFile.entity';
 import { GoogleApiService } from 'google-api/google-api.service';
-import { convertMemberRoomRole } from 'etc/convert-member-room-role';
 import { MessagesService } from 'messages/messages.service';
 import { Approval } from 'approvals/entities/approval.entity';
 
@@ -47,13 +46,13 @@ export class ChatRoomsService {
 
   async createRoom(
     self: Account,
-    memberIdList: string[],
+    memberIDsAdded: string[],
     type: ChatRoomTypeEnum,
   ) {
-    if (!memberIdList.includes(self.id))
-      return [null, 'List of members does not contain you'];
+    const selfIDInList = memberIDsAdded.find((id) => id == self.id);
+    if (selfIDInList) return [null, 'Can not add you yourself to room '];
     if (type == ChatRoomTypeEnum.OWN) {
-      if (memberIdList.length != 1) return [null, 'Own room only has you'];
+      if (memberIDsAdded.length != 0) return [null, 'Own room only has you'];
       const existOwnRoom = await this.chatRoomRepository.findOne({
         where: {
           type: ChatRoomTypeEnum.OWN,
@@ -63,81 +62,77 @@ export class ChatRoomsService {
       if (existOwnRoom) return [null, 'Already create own room'];
       const room = await this.chatRoomRepository.create({
         type,
-        name: self.fname,
         members: [
           {
             role: MemberRoleEnum.ADMIN,
-            nickname: self.lname + ' ' + self.fname,
             account: { id: self.id },
           },
         ],
-        avatarUrls: [self.avatar.url],
+        avatarUrls: [self.avatarUrl],
       });
       return [room, null];
     }
-    if (memberIdList.length < 2) return [null, 'Number of members must be > 1'];
     if (type == ChatRoomTypeEnum.ONE_ON_ONE) {
-      if (memberIdList.length != 2)
+      if (memberIDsAdded.length != 1)
         return [null, 'One on one room must has only 2 members'];
-      const opponentId: string =
-        memberIdList[0] == self.id ? memberIdList[1] : memberIdList[0];
-      const selfMembers: Member[] = await this.memberRepository.find({
-        where: {
-          account: { id: self.id },
-          room: { type: ChatRoomTypeEnum.ONE_ON_ONE },
-        },
-        relations: {
-          room: { members: { account: true } },
-        },
-      });
-      const existRoom = selfMembers.find((selfMember) => {
-        const accountRoomId: string[] = [];
-        selfMember.room.members.map((member) => {
-          accountRoomId.push(member.account.id);
-        });
-        return accountRoomId.includes(opponentId);
-      });
-      console.log(existRoom);
-      if (existRoom) return [null, 'Already create that room'];
+      const opponentId: string = memberIDsAdded[0];
       const opponent = await this.accountRepository.findOne({
         where: { id: opponentId, isActive: true },
-        relations: { avatar: true },
       });
       if (!opponent) return [null, 'Account not found'];
+      const existSelfMemberInThatRoom: Member =
+        await this.memberRepository.findOne({
+          where: {
+            account: { id: self.id },
+            room: {
+              type: ChatRoomTypeEnum.ONE_ON_ONE,
+              members: { account: { id: opponentId } },
+            },
+          },
+          relations: {
+            room: { members: { account: true } },
+          },
+        });
+      if (existSelfMemberInThatRoom) return [null, 'Already create that room'];
+      // const existRoom = selfMembers.find((selfMember) => {
+      //   const accountRoomId: string[] = [];
+      //   selfMember.room.members.map((member) => {
+      //     accountRoomId.push(member.account.id);
+      //   });
+      //   return accountRoomId.includes(opponentId);
+      // });
+      // console.log(existRoom);
+      // if (existRoom) return [null, 'Already create that room'];
       const room = await this.chatRoomRepository.create({
         type,
         members: [
           {
-            nickname: self.lname + ' ' + self.fname,
             account: { id: self.id },
           },
           {
-            nickname: opponent.lname + ' ' + opponent.fname,
             account: { id: opponent.id },
           },
         ],
-        avatarUrls: [opponent.avatar.url],
+        avatarUrls: [opponent.avatarUrl || opponent.fname[0]],
       });
       await this.chatRoomRepository.save(room);
       return [room, null];
     }
-    if (memberIdList.length > 100)
-      return [null, 'Maximum number of members is 100'];
-    const members = await this.accountRepository.find({
-      where: { id: In(memberIdList) },
-      relations: {
-        avatar: true,
-      },
+    // case room of multiple users
+    if (memberIDsAdded.length == 0 || memberIDsAdded.length >= 100)
+      return [null, 'Number of members is between 2 and 100'];
+    const members: Account[] = await this.accountRepository.find({
+      where: { id: In(memberIDsAdded) },
       select: {
         id: true,
         fname: true,
         lname: true,
         isActive: true,
+        avatarUrl: true,
       },
     });
-    if (members.length < memberIdList.length)
-      return [null, 'Some accounts not found'];
-    const inActiveAccounts: Account[] = [];
+    if (members.length < memberIDsAdded.length)
+      return [null, 'Some accounts not found or inactive'];
     const avatarUrls: string[] = [];
     let name = '';
     let index = 0;
@@ -149,32 +144,21 @@ export class ChatRoomsService {
       index++;
     }
     name = name.slice(0, name.length - 2);
-    console.log(name);
     index = 0;
     while (index < 2 && index < members.length) {
-      if (members[index].id != self.id) {
-        index++;
-        avatarUrls.push(members[index].avatar.url);
-      }
+      avatarUrls.push(members[index].avatarUrl || members[index].fname[0]); //if avatarUrls null then replace by first letter of fname
+      index++;
     }
     const membersInRoom = [];
     members.map((member) => {
-      if (!member.isActive) inActiveAccounts.push(member);
-      if (member.id == self.id) {
-        membersInRoom.push({
-          nickname: member.lname + ' ' + member.fname,
-          account: { id: member.id },
-          role: MemberRoleEnum.ADMIN,
-        });
-      } else {
-        membersInRoom.push({
-          nickname: member.lname + ' ' + member.fname,
-          account: { id: member.id },
-        });
-      }
+      membersInRoom.push({
+        account: { id: member.id },
+      });
     });
-    if (inActiveAccounts.length > 0)
-      return [inActiveAccounts, 'The following accounts are not active'];
+    membersInRoom.push({
+      account: { id: self.id },
+      role: MemberRoleEnum.ADMIN,
+    });
     const room = await this.chatRoomRepository.create({
       type,
       name,
@@ -192,7 +176,7 @@ export class ChatRoomsService {
         isRoomLimited: false,
       },
       relations: {
-        room: { members: { account: { avatar: true } } },
+        room: { members: { account: true } },
       },
       order: {
         room: { updatedAt: 'DESC' },
@@ -201,20 +185,30 @@ export class ChatRoomsService {
     let rooms: ChatRoom[] = selfMembers.map((selfMember) => selfMember.room);
     rooms = rooms.map((room) => {
       if (room.type == ChatRoomTypeEnum.OWN) {
-        room.avatarUrls = [self.avatar.url];
+        room.avatarUrls = [self.avatarUrl || self.fname[0]];
+        // get room name
+        if (room.members[0].nickname)
+          room.name = room.members[0].nickname; //index 0 is self
+        else room.name = self.lname + ' ' + self.fname;
       } else if (room.type == ChatRoomTypeEnum.ONE_ON_ONE) {
-        const opponent: Account =
+        const opponent: Member =
           room.members[0].account.id == self.id
-            ? room.members[1].account
-            : room.members[0].account;
-        room.avatarUrls = [opponent.avatar.url];
-        room.name = opponent.lname + ' ' + opponent.fname;
+            ? room.members[1]
+            : room.members[0];
+        room.avatarUrls = [
+          opponent.account.avatarUrl || opponent.account.fname[0],
+        ];
+        if (opponent.nickname) room.name = opponent.nickname;
+        else room.name = opponent.account.lname + ' ' + opponent.account.fname;
       } else {
         let index = 0;
         room.avatarUrls = [];
         while (index < 2 && index < room.members.length) {
           if (room.members[index].account.id != self.id) {
-            room.avatarUrls.push(room.members[index].account.avatar.url);
+            room.avatarUrls.push(
+              room.members[index].account.avatarUrl ||
+                room.members[index].account.fname[0],
+            );
           }
           index++;
         }
@@ -274,9 +268,6 @@ export class ChatRoomsService {
       where: {
         room: { id: roomId },
       },
-      relations: {
-        account: { avatar: true },
-      },
     });
     return [members, null];
   }
@@ -333,7 +324,7 @@ export class ChatRoomsService {
       msgNotiText = `${self.lname} ${self.fname} turn on approval feature`;
     }
     await this.chatRoomRepository.save(room);
-    const msgs = [];
+    const msgs: Message[] = [];
     const [msg, err] = await this.messagesService.addMsg(
       MessageTypeEnum.NOTIFICATION,
       null,
@@ -341,7 +332,8 @@ export class ChatRoomsService {
       msgNotiText,
       null,
     );
-    msgs.push(msg);
+    const msgConvert = msg as Message;
+    msgs.push(msgConvert);
     if (!room.isApprovalEnable) {
       const approvals = await this.approvalRepository.find({
         where: { room: { id: roomId } },
@@ -356,8 +348,6 @@ export class ChatRoomsService {
         for (const approval of approvals) {
           const member = new Member();
           member.account = approval.account;
-          member.nickname =
-            approval.account.lname + ' ' + approval.account.fname;
           member.room = room;
           newMembers.push(member);
           approvalIds.push(approval.id);
@@ -378,7 +368,8 @@ export class ChatRoomsService {
           approveMsgText,
           null,
         );
-        msgs.push(msg);
+        const msgConvert = msg as Message;
+        msgs.push(msgConvert);
       }
     }
     return [msgs, null];
@@ -415,7 +406,7 @@ export class ChatRoomsService {
       MessageTypeEnum.NOTIFICATION,
       null,
       roomId,
-      `${self.fname} ${self.lname} left room`,
+      `${self.lname} ${self.fname} left room`,
       null,
     );
     return [msg, null];

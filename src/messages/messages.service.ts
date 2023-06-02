@@ -2,13 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { Message } from './entities/message.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MessageTypeEnum } from 'etc/enums';
+import { MessageTypeEnum, TogglePinMessageEnum } from 'etc/enums';
 import { NetworkFile } from 'network-files/entities/networkFile.entity';
 import { Account } from 'accounts/entities/account.entity';
 import { ChatRoom } from 'chat-rooms/entities/chat-room.entity';
 import { GoogleApiService } from 'google-api/google-api.service';
 import { getGoogleDriveUrl } from 'etc/google-drive-url';
 import { IPaginationOptions, paginate } from 'nestjs-typeorm-paginate';
+import { Member } from 'members/entities/member.entity';
 
 @Injectable()
 export class MessagesService {
@@ -18,6 +19,9 @@ export class MessagesService {
 
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
+
+    @InjectRepository(Member)
+    private readonly memberRepository: Repository<Member>,
 
     @InjectRepository(ChatRoom)
     private readonly chatRoomRepository: Repository<ChatRoom>,
@@ -57,7 +61,7 @@ export class MessagesService {
     const msgQueryBuilder = await this.messageRepository
       .createQueryBuilder('msg')
       .innerJoin('msg.room', 'room')
-      .innerJoinAndSelect('msg.sender', 'sender')
+      .leftJoinAndSelect('msg.sender', 'sender')
       .leftJoinAndSelect('msg.files', 'files')
       .where('room.id = :roomId', { roomId })
       .orderBy('msg.createdAt', 'DESC');
@@ -105,7 +109,6 @@ export class MessagesService {
     await this.messageRepository.save(msg);
     if (msg.files && msg.files.length > 0) {
       msg.files = msg.files.map((file: NetworkFile) => {
-        delete file.account;
         return file;
       });
     }
@@ -164,6 +167,43 @@ export class MessagesService {
     msg.files = null;
     await this.messageRepository.save(msg);
     if (fileIds.length > 0) await this.networkFileRepository.delete(fileIds);
+    return [msg, null];
+  }
+
+  async getAllPinMsgs(self: Account, roomId: number) {
+    const selfMember = await this.memberRepository.findOne({
+      where: { account: { id: self.id }, room: { id: roomId } },
+      relations: {
+        room: true,
+      },
+    });
+    if (!selfMember) return [null, 'Room not found'];
+    const pinMsgs = await this.messageRepository.find({
+      where: {
+        room: { id: roomId },
+        isPin: true,
+      },
+      relations: {
+        files: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+    return [pinMsgs, null];
+  }
+
+  async togglePinMsg(self: Account, msgId: number) {
+    const selfMember = await this.memberRepository.findOne({
+      where: { account: { id: self.id }, room: { messages: { id: msgId } } },
+      relations: {
+        room: { messages: true },
+      },
+    });
+    if (!selfMember) return [null, 'Message not found'];
+    const msg = selfMember.room.messages[0];
+    msg.isPin = true ? false : true;
+    await this.messageRepository.save(msg);
     return [msg, null];
   }
 }

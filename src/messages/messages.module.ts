@@ -7,10 +7,11 @@ import { Account } from 'accounts/entities/account.entity';
 import { ChatRoom } from 'chat-rooms/entities/chat-room.entity';
 import { GoogleApiModule } from 'google-api/google-api.module';
 import { NetworkFile } from 'network-files/entities/networkFile.entity';
+import { Member } from 'members/entities/member.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Message, Account, ChatRoom, NetworkFile]),
+    TypeOrmModule.forFeature([Message, Account, Member, ChatRoom, NetworkFile]),
     GoogleApiModule,
   ],
   controllers: [MessagesController],

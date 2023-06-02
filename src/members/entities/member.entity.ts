@@ -19,7 +19,7 @@ export class Member {
   @Column({ default: false })
   isRoomLimited: boolean;
 
-  @Column()
+  @Column({ nullable: true })
   nickname: string;
 
   @CreateDateColumn()

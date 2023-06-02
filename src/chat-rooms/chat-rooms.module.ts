@@ -26,5 +26,6 @@ import { Approval } from 'approvals/entities/approval.entity';
   ],
   controllers: [ChatRoomsController],
   providers: [ChatRoomsService],
+  exports: [ChatRoomsService],
 })
 export class ChatRoomsModule {}

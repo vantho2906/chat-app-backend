@@ -81,8 +81,18 @@ export enum FileCategoryEnum {
   OTHER = 'Other',
 }
 
-export enum NotificationType {
+export enum NotificationTypeEnum {
   APPROVAL = 'Approval',
   MESSAGE = 'Message',
   FRIEND_REQUEST = 'Friend Request',
+}
+
+export enum HandleApprovalEnum {
+  ACCEPT = 'Accept',
+  DECLINE = 'Decline',
+}
+
+export enum TogglePinMessageEnum {
+  PIN = 'Pin',
+  UNPIN = 'Unpin',
 }

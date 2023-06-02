@@ -6,7 +6,12 @@ import { Message } from 'messages/entities/message.entity';
 import { In, Repository } from 'typeorm';
 import { Member } from './entities/member.entity';
 import { NetworkFile } from 'network-files/entities/networkFile.entity';
-import { ChatRoomTypeEnum, MemberRoleEnum, MessageTypeEnum } from 'etc/enums';
+import {
+  ChatRoomTypeEnum,
+  MemberRoleEnum,
+  MessageTypeEnum,
+  NotificationTypeEnum,
+} from 'etc/enums';
 import { MessagesService } from 'messages/messages.service';
 import { Approval } from 'approvals/entities/approval.entity';
 import { convertMemberRoomRole } from 'etc/convert-member-room-role';
@@ -99,6 +104,9 @@ export class MembersService {
       },
     });
     if (targetMember) return [null, 'User already in room'];
+    const existApproval = await this.approvalRepository.findOne({
+      where: { account: { id: targetAccountId } },
+    });
     if (
       selfMember.role == MemberRoleEnum.ADMIN ||
       selfMember.role == MemberRoleEnum.VICE ||
@@ -109,6 +117,7 @@ export class MembersService {
       newMember.nickname = target.lname + ' ' + target.fname;
       newMember.room = selfMember.room;
       await this.memberRepository.save(newMember);
+      if (existApproval) await this.approvalRepository.delete(existApproval.id);
       const [msg, err] = await this.messagesService.addMsg(
         MessageTypeEnum.NOTIFICATION,
         null,
@@ -118,6 +127,8 @@ export class MembersService {
       );
       return [msg, null];
     }
+    //check if approval is exist
+    if (existApproval) return [true, null];
     // create approval
     const approval = await this.approvalRepository.save({
       account: target,
@@ -139,6 +150,7 @@ export class MembersService {
       return endUser;
     });
     const notification = await this.notificationRepository.save({
+      type: NotificationTypeEnum.APPROVAL,
       content: `${target.lname} ${target.fname} wanted to join room ${selfMember.room.name}`,
       link: null,
       actor: target,
@@ -178,7 +190,7 @@ export class MembersService {
       MessageTypeEnum.NOTIFICATION,
       null,
       roomId,
-      `${self.fname} ${self.lname} kicked ${target.fname} ${target.lname}`,
+      `${self.lname} ${self.fname} kicked ${target.lname} ${target.fname}`,
       null,
     );
     return [msg, null];
@@ -216,14 +228,14 @@ export class MembersService {
     targetMember.role = roleAppointed;
     let msgNotiText: string;
     if (roleAppointed == MemberRoleEnum.ADMIN) {
-      msgNotiText = `${self.fname} ${self.lname} gave admin rights to  ${target.fname} ${target.lname}`;
+      msgNotiText = `${self.lname} ${self.fname} gave admin rights to  ${target.fname} ${target.lname}`;
       selfMember.role = MemberRoleEnum.USER;
       await this.memberRepository.save([selfMember, targetMember]);
     } else if (roleAppointed == MemberRoleEnum.VICE) {
-      msgNotiText = `${self.fname} ${self.lname} appoint ${target.fname} ${target.lname} as vice`;
+      msgNotiText = `${self.lname} ${self.fname} appoint ${target.fname} ${target.lname} as vice`;
       await this.memberRepository.save(targetMember);
     } else {
-      msgNotiText = `${self.fname} ${self.lname} appoint ${target.fname} ${target.lname} as user`;
+      msgNotiText = `${self.lname} ${self.fname} appoint ${target.fname} ${target.lname} as user`;
       await this.memberRepository.save(targetMember);
     }
     const [msg, err] = await this.messagesService.addMsg(

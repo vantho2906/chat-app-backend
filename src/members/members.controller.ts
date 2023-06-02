@@ -16,6 +16,8 @@ import { Account } from 'accounts/entities/account.entity';
 import { UpdateNickNameDto } from './dtos/update-nickname.dto';
 import ResponseObject from 'etc/response-object';
 import { AppointMemberRoleDto } from './dtos/appoint-member-role.dto';
+import { Notification } from 'notifications/entities/notification.entity';
+import { Member } from './entities/member.entity';
 
 @ApiTags('members')
 @Controller('members')
@@ -66,12 +68,10 @@ export class MembersController {
         null,
         err,
       );
-    return new ResponseObject(
-      HttpStatus.OK,
-      'Toggle limit room success',
-      data,
-      err,
-    );
+    const selfMember = data as Member;
+    if (selfMember.isRoomLimited)
+      return new ResponseObject(HttpStatus.OK, 'Limit room success', data, err);
+    return new ResponseObject(HttpStatus.OK, 'Unlimit room success', data, err);
   }
 
   @Post('add-member')
@@ -95,7 +95,23 @@ export class MembersController {
         null,
         err,
       );
-    return new ResponseObject(HttpStatus.OK, 'Add member success', data, err);
+    if (data == true) {
+      return new ResponseObject(
+        HttpStatus.OK,
+        'Waiting for approval',
+        data,
+        null,
+      );
+    }
+    const notification = data as Notification;
+    if (notification.content)
+      return new ResponseObject(
+        HttpStatus.OK,
+        'Waiting for approval',
+        data,
+        null,
+      );
+    return new ResponseObject(HttpStatus.OK, 'Add member success', data, null);
   }
 
   @Post('kick-member')

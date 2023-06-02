@@ -4,7 +4,7 @@ import { Account } from './entities/account.entity';
 import { Repository } from 'typeorm';
 import { GoogleApiService } from 'google-api/google-api.service';
 import { NetworkFile } from 'network-files/entities/networkFile.entity';
-import { getGoogleDriveUrl } from 'etc/google-drive-url';
+import { getGoogleDriveFileID, getGoogleDriveUrl } from 'etc/google-drive-url';
 import { UpdateAccountInfoDto } from './dtos/update-account-info-dto';
 
 @Injectable()
@@ -27,9 +27,6 @@ export class AccountsService {
 
   async getById(id: string) {
     return await this.accountRepository.findOne({
-      relations: {
-        avatar: true,
-      },
       where: { id, isActive: true },
     });
   }
@@ -39,17 +36,16 @@ export class AccountsService {
   }
 
   async updateAvatar(account: Account, file: Express.Multer.File) {
-    if (account.avatar.fileIdOnDrive) {
-      this.googleApiService.deleteFileById(account.avatar.fileIdOnDrive);
+    if (account.avatarUrl && getGoogleDriveFileID(account.avatarUrl)) {
+      this.googleApiService.deleteFileById(
+        getGoogleDriveFileID(account.avatarUrl),
+      );
     }
     const fileUpload = await this.googleApiService.uploadFile(file);
     if (!fileUpload) return [null, 'Error while uploading file'];
-    account.avatar.filename = fileUpload.name;
-    account.avatar.mimeType = fileUpload.mimeType;
-    account.avatar.fileIdOnDrive = fileUpload.id;
-    account.avatar.url = getGoogleDriveUrl(fileUpload.id);
+    account.avatarUrl = getGoogleDriveUrl(fileUpload.id);
     await this.accountRepository.save(account);
-    return [account.avatar, null];
+    return [account, null];
   }
 
   async updatePersonalInfo(self: Account, updateInfo: UpdateAccountInfoDto) {
@@ -68,9 +64,6 @@ export class AccountsService {
       const account = await this.accountRepository.findOne({
         where: {
           email: keyword.trim().toLowerCase(),
-        },
-        relations: {
-          avatar: true,
         },
       });
       return [account, null];

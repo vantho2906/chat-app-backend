@@ -12,6 +12,7 @@ import { HttpModule } from '@nestjs/axios';
 import { NetworkFile } from 'network-files/entities/networkFile.entity';
 import { OtpsModule } from 'otps/otps.module';
 import { GoogleApiModule } from 'google-api/google-api.module';
+import { ChatRoomsModule } from 'chat-rooms/chat-rooms.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { GoogleApiModule } from 'google-api/google-api.module';
     TypeOrmModule.forFeature([Account, NetworkFile]),
     AccountsModule,
     PassportModule,
+    ChatRoomsModule,
     JwtModule.register({
       secret: TestNestjsConfig.JWT_SECRET,
       signOptions: {

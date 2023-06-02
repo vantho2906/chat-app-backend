@@ -17,7 +17,6 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
-  ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
@@ -30,6 +29,7 @@ import CurrentAccount from 'decorators/current-account.decorator';
 import { Account } from 'accounts/entities/account.entity';
 import { PaginationOptionsDto } from 'etc/pagination-options.dto';
 import { EditMessageTextDto } from './dtos/edit-message-text.dto';
+import { Message } from './entities/message.entity';
 
 @ApiTags('messages')
 @Controller('messages')
@@ -166,6 +166,60 @@ export class MessagesController {
     return new ResponseObject(
       HttpStatus.OK,
       'Recall message success',
+      data,
+      null,
+    );
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('get-all-pin-msgs/:roomId')
+  async getAllPinMsgs(
+    @CurrentAccount() self: Account,
+    @Param('msgId', ParseIntPipe) roomId: number,
+  ) {
+    const [data, err] = await this.messagesService.getAllPinMsgs(self, roomId);
+    if (err)
+      return new ResponseObject(
+        HttpStatus.BAD_REQUEST,
+        'Get all pin messages failed',
+        null,
+        err,
+      );
+    return new ResponseObject(
+      HttpStatus.OK,
+      'Get all pin messages success',
+      data,
+      null,
+    );
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('toggle-pin-message/:msgId')
+  async togglePinMsg(
+    @CurrentAccount() self: Account,
+    @Param('msgId', ParseIntPipe) msgId: number,
+  ) {
+    const [data, err] = await this.messagesService.togglePinMsg(self, msgId);
+    if (err)
+      return new ResponseObject(
+        HttpStatus.BAD_REQUEST,
+        'Toggle pin message failed',
+        null,
+        err,
+      );
+    const msg = data as Message;
+    if (msg.isPin)
+      return new ResponseObject(
+        HttpStatus.OK,
+        'Pin message success',
+        data,
+        null,
+      );
+    return new ResponseObject(
+      HttpStatus.OK,
+      'Unpin message success',
       data,
       null,
     );

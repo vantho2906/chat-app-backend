@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import { AccountsService } from '../accounts/accounts.service';
 import TestNestjsConfig from '../etc/config';
-import { SignInWay } from 'etc/enums';
+import { ChatRoomTypeEnum, SignInWay } from 'etc/enums';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Account } from 'accounts/entities/account.entity';
 import { Repository } from 'typeorm';
@@ -15,6 +15,7 @@ import { NormalLoginDto } from './dtos/normal-login-dto';
 import { FinalStepNormalRegisterDto } from './dtos/final-step-normal-register-dto';
 import { GoogleApiService } from 'google-api/google-api.service';
 import { getGoogleDriveUrl } from 'etc/google-drive-url';
+import { ChatRoomsService } from 'chat-rooms/chat-rooms.service';
 @Injectable()
 export class AuthService {
   constructor(
@@ -23,6 +24,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly httpService: HttpService,
     private readonly googleApiService: GoogleApiService,
+    private readonly chatRoomsService: ChatRoomsService,
 
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
@@ -58,17 +60,19 @@ export class AuthService {
     if (!account) {
       const imageUrl = payload.picture;
       const response = await this.httpService.get(imageUrl).toPromise();
-      const contentType = response.headers['content-type'];
-      const accountCreate = await this.accountRepository.save({
-        email,
-        signInWay: SignInWay.GOOGLE,
-        fname: payload.given_name,
-        lname: payload.family_name,
-        avatar: {
-          mimeType: contentType,
-          url: payload.picture,
-        },
-      });
+      // const contentType = response.headers['content-type'];
+      const newAccount = new Account();
+      newAccount.email = email;
+      newAccount.fname = payload.given_name;
+      newAccount.lname = payload.family_name;
+      newAccount.avatarUrl = payload.picture;
+      const accountCreate = await this.accountRepository.save(newAccount);
+      // create own room
+      await this.chatRoomsService.createRoom(
+        accountCreate,
+        [],
+        ChatRoomTypeEnum.OWN,
+      );
       const token = this.jwtService.sign({ sub: accountCreate.id });
       return [token, null];
     } else if (!account.isActive) return [null, 'Account is blocked'];
@@ -102,22 +106,17 @@ export class AuthService {
       info.email,
     );
     if (!isMatchOTP) return [null, 'OTP not match or expired'];
-    const avatar = await this.googleApiService.getFileByName(
-      info.fname.trim()[0].toUpperCase() + '.png',
-    );
-    console.log(avatar);
-    console.log(info.fname.trim()[0]);
-    if (!avatar) return [null, 'File not found'];
+    // const avatar = await this.googleApiService.getFileByName(
+    //   info.fname.trim()[0].toUpperCase() + '.png',
+    // );
+    // console.log(avatar);
+    // console.log(info.fname.trim()[0]);
+    // if (!avatar) return [null, 'File not found'];
     const accountCreate = this.accountRepository.create({
       email: info.email,
       password: info.password,
       fname: info.fname.trim(),
       lname: info.lname.trim(),
-      avatar: {
-        filename: avatar.name,
-        mimeType: avatar.mimeType,
-        url: getGoogleDriveUrl(avatar.id),
-      },
     });
     accountCreate.hashPassword();
     await this.accountRepository.save(accountCreate);

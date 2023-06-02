@@ -28,9 +28,6 @@ export class NetworkFile {
   @CreateDateColumn()
   createdAt: Date;
 
-  @OneToOne(() => Account, (account) => account.avatar)
-  account: Account;
-
   @ManyToOne(() => Message, (msg) => msg.files)
   message: Message;
 }

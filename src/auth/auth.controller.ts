@@ -18,7 +18,7 @@ import { FirstStepNormalRegisterDto } from './dtos/first-step-normal-register-dt
 import CurrentAccount from 'decorators/current-account.decorator';
 import { ChangePasswordDto } from './dtos/change-password-dto';
 
-@ApiTags('auth')
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
