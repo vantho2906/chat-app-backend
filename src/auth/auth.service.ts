@@ -41,6 +41,7 @@ export class AuthService {
         audience: TestNestjsConfig.GOOGLE_CLIENT_ID,
       });
       const payload = ticket.getPayload();
+      console.log(payload);
       return [payload, null];
     } catch (err) {
       return [null, err.message];

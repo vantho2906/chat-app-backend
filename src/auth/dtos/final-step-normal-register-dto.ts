@@ -11,14 +11,14 @@ export class FinalStepNormalRegisterDto {
 
   @ApiProperty({ example: 'Thọ' })
   @IsNotEmpty()
-  @Matches(/^[a-zA-Z]+(?:[ ]?[a-zA-Z]*)*$/, {
+  @Matches(/^([^0-9]*)$/, {
     message: 'First name only contains alphabet characters and spaces',
   })
   fname: string;
 
   @ApiProperty({ example: 'Trần Văn' })
   @IsNotEmpty()
-  @Matches(/^[a-zA-Z]+(?:[ ]?[a-zA-Z]*)*$/, {
+  @Matches(/^([^0-9]*)$/, {
     message: 'Last name only contains alphabet characters and spaces',
   })
   lname: string;

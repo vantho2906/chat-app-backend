@@ -102,12 +102,7 @@ export class AuthController {
         null,
         err,
       );
-    return new ResponseObject(
-      HttpStatus.OK,
-      'Pass this step success',
-      data,
-      null,
-    );
+    return new ResponseObject(HttpStatus.OK, 'Register success', data, null);
   }
 
   @Post('change-password')
