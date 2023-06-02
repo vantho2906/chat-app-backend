@@ -14,6 +14,7 @@ export class FinalStepNormalRegisterDto {
   @Matches(/^([^0-9]*)$/, {
     message: 'First name only contains alphabet characters and spaces',
   })
+  @Length(30)
   fname: string;
 
   @ApiProperty({ example: 'Trần Văn' })
@@ -21,6 +22,7 @@ export class FinalStepNormalRegisterDto {
   @Matches(/^([^0-9]*)$/, {
     message: 'Last name only contains alphabet characters and spaces',
   })
+  @Length(30)
   lname: string;
 
   @ApiProperty()
