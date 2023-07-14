@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MembersService } from './members.service';
 import { MembersController } from './members.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -10,6 +10,7 @@ import { NetworkFile } from 'network-files/entities/networkFile.entity';
 import { MessagesModule } from 'messages/messages.module';
 import { Approval } from 'approvals/entities/approval.entity';
 import { Notification } from 'notifications/entities/notification.entity';
+import { AccountsModule } from 'accounts/accounts.module';
 
 @Module({
   imports: [
@@ -22,9 +23,11 @@ import { Notification } from 'notifications/entities/notification.entity';
       Approval,
       Notification,
     ]),
-    MessagesModule,
+    forwardRef(() => MessagesModule),
+    AccountsModule,
   ],
   controllers: [MembersController],
   providers: [MembersService],
+  exports: [MembersService],
 })
 export class MembersModule {}

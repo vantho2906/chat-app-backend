@@ -11,6 +11,8 @@ import { NetworkFile } from 'network-files/entities/networkFile.entity';
 import { GoogleApiService } from 'google-api/google-api.service';
 import { MessagesService } from 'messages/messages.service';
 import { ChatRoomTypeEnum, MemberRoleEnum } from 'etc/enums';
+import { ChatRoomsService } from 'chat-rooms/chat-rooms.service';
+import { MembersService } from 'members/members.service';
 
 @Injectable()
 export class ApprovalsService {
@@ -35,16 +37,18 @@ export class ApprovalsService {
 
     private readonly googleApiService: GoogleApiService,
 
+    private readonly chatRoomService: ChatRoomsService,
+
     private readonly messagesService: MessagesService,
+
+    private readonly memberService: MembersService,
   ) {}
 
   async getAllApprovals(self: Account, roomId: number) {
-    const selfMember = await this.memberRepository.findOne({
-      where: { account: { id: self.id }, room: { id: roomId } },
-      relations: {
-        room: true,
-      },
-    });
+    const selfMember = await this.memberService.getMemberWithRoomRelation(
+      self.id,
+      roomId,
+    );
     if (!selfMember) return [null, 'Room not found'];
     if (selfMember.room.type != ChatRoomTypeEnum.MULTIPLE_USERS)
       return [null, 'Room type must be multiple users'];
@@ -62,12 +66,10 @@ export class ApprovalsService {
   }
 
   async acceptAllApprovals(self: Account, roomId: number) {
-    const selfMember = await this.memberRepository.findOne({
-      where: { account: { id: self.id }, room: { id: roomId } },
-      relations: {
-        room: true,
-      },
-    });
+    const selfMember = await this.memberService.getMemberWithRoomRelation(
+      self.id,
+      roomId,
+    );
     if (!selfMember) return [null, 'Room not found'];
     if (selfMember.room.type != ChatRoomTypeEnum.MULTIPLE_USERS)
       return [null, 'Room type must be multiple users'];
@@ -82,6 +84,7 @@ export class ApprovalsService {
       },
     });
     if (!approvals.length) return [null, 'Not have any approvals'];
+    //obtain new members
     const newMembers = approvals.map((approval) => {
       const member = new Member();
       member.account = approval.account;
@@ -89,7 +92,7 @@ export class ApprovalsService {
       return member;
     });
     const approvalIds = approvals.map((approval) => approval.id);
-    // delete approvals
+    // delete old approvals
     await this.approvalRepository.delete(approvalIds);
     await this.memberRepository.save(newMembers);
     return [newMembers, null];
@@ -101,12 +104,10 @@ export class ApprovalsService {
     approvalId: number,
     decision: HandleApprovalEnum,
   ) {
-    const selfMember = await this.memberRepository.findOne({
-      where: { account: { id: self.id }, room: { id: roomId } },
-      relations: {
-        room: true,
-      },
-    });
+    const selfMember = await this.memberService.getMemberWithRoomRelation(
+      self.id,
+      roomId,
+    );
     if (!selfMember) return [null, 'Room not found'];
     if (selfMember.room.type != ChatRoomTypeEnum.MULTIPLE_USERS)
       return [null, 'Room type must be multiple users'];
@@ -121,17 +122,16 @@ export class ApprovalsService {
       },
     });
     if (!approval) return [null, 'Approval not exist'];
-    const existMember = await this.memberRepository.findOne({
-      where: {
-        account: { id: approval.account.id },
-        room: { id: roomId },
-      },
-    });
-    if (existMember) return [null, 'User already in room'];
+
+    const isUserOfApprovalExistInRoom =
+      !!(await this.memberService.getMemberWithRoomRelation(
+        approval.account.id,
+        roomId,
+      ));
+    if (isUserOfApprovalExistInRoom) return [null, 'User already in room'];
     if (decision == HandleApprovalEnum.ACCEPT) {
       const newMember = new Member();
-      newMember.account = approval.account;
-      newMember.room = selfMember.room;
+      newMember.setAccount(approval.account).setRoom(selfMember.room);
       await this.memberRepository.save(newMember);
       await this.approvalRepository.delete(approval.id);
       // create message

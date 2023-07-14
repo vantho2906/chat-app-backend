@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
-import TestNestjsConfig from 'etc/config';
+import ChatAppConfig from 'etc/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 
@@ -11,12 +11,12 @@ export class OtpsService {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: TestNestjsConfig.NODE_MAILER_EMAIL_USERNAME,
-        pass: TestNestjsConfig.NODE_MAILER_EMAIL_PASSWORD,
+        user: ChatAppConfig.NODE_MAILER_EMAIL_USERNAME,
+        pass: ChatAppConfig.NODE_MAILER_EMAIL_PASSWORD,
       },
     });
     const mailOptions = {
-      from: TestNestjsConfig.NODE_MAILER_EMAIL_USERNAME,
+      from: ChatAppConfig.NODE_MAILER_EMAIL_USERNAME,
       to: email,
       subject: 'Sending OTP',
       text: text,
@@ -48,9 +48,7 @@ export class OtpsService {
   }
 
   async confirmOTP(userOTP: string, email: string) {
-    console.log(email);
     const otp = await this.cacheManager.get(email);
-    console.log(otp);
     if (!otp || otp != userOTP.trim()) return false;
     return true;
   }

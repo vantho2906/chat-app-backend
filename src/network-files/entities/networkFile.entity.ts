@@ -30,4 +30,29 @@ export class NetworkFile {
 
   @ManyToOne(() => Message, (msg) => msg.files)
   message: Message;
+
+  setFilename(filename: string) {
+    this.filename = filename;
+    return this;
+  }
+
+  setMimeType(mimeType: string) {
+    this.mimeType = mimeType;
+    return this;
+  }
+
+  setFileIdOnDrive(fileIdOnDrive: string) {
+    this.fileIdOnDrive = fileIdOnDrive;
+    return this;
+  }
+
+  setUrl(url: string) {
+    this.url = url;
+    return this;
+  }
+
+  setMesage(message: Message) {
+    this.message = message;
+    return this;
+  }
 }

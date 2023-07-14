@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import TestNestjsConfig from 'etc/config';
+import ChatAppConfig from 'etc/config';
 import { AccountsModule } from '../accounts/accounts.module';
 import { JwtStrategy } from './jwt.strategy';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -24,9 +24,9 @@ import { ChatRoomsModule } from 'chat-rooms/chat-rooms.module';
     PassportModule,
     ChatRoomsModule,
     JwtModule.register({
-      secret: TestNestjsConfig.JWT_SECRET,
+      secret: ChatAppConfig.JWT_SECRET,
       signOptions: {
-        expiresIn: TestNestjsConfig.JWT_EXPIRES_IN,
+        expiresIn: ChatAppConfig.JWT_EXPIRES_IN,
       },
     }),
   ],

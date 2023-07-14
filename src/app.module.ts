@@ -14,29 +14,29 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { AuthModule } from './auth/auth.module';
 import { OtpsModule } from './otps/otps.module';
 import { GoogleApiModule } from './google-api/google-api.module';
-import TestNestjsDataSource from './database/datasource';
+import ChatAppDataSource from './database/datasource';
 import { SocketModule } from 'socket/socket.module';
 import { FriendsModule } from './friends/friends.module';
 import { NotiEndUsersModule } from './noti-end-users/noti-end-users.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot(TestNestjsDataSource.options),
-    AccountsModule,
-    NetworkFilesModule,
-    ChatRoomsModule,
-    MembersModule,
-    ApprovalsModule,
-    FriendRequestsModule,
-    ReactsModule,
-    MessagesModule,
-    NotificationsModule,
+    TypeOrmModule.forRoot(ChatAppDataSource.options),
     AuthModule,
-    OtpsModule,
-    GoogleApiModule,
-    SocketModule,
+    AccountsModule,
+    ApprovalsModule,
+    ChatRoomsModule,
+    FriendRequestsModule,
     FriendsModule,
+    GoogleApiModule,
+    MembersModule,
+    MessagesModule,
+    NetworkFilesModule,
+    NotificationsModule,
     NotiEndUsersModule,
+    OtpsModule,
+    SocketModule,
+    ReactsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

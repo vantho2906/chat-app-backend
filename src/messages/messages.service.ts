@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { Message } from './entities/message.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,6 +10,7 @@ import { GoogleApiService } from 'google-api/google-api.service';
 import { getGoogleDriveUrl } from 'etc/google-drive-url';
 import { IPaginationOptions, paginate } from 'nestjs-typeorm-paginate';
 import { Member } from 'members/entities/member.entity';
+import { MembersService } from 'members/members.service';
 
 @Injectable()
 export class MessagesService {
@@ -30,6 +31,9 @@ export class MessagesService {
     private readonly networkFileRepository: Repository<NetworkFile>,
 
     private readonly googleApiService: GoogleApiService,
+
+    @Inject(forwardRef(() => MembersService))
+    private readonly memberService: MembersService,
   ) {}
 
   async getMsgById(id: number) {
@@ -44,6 +48,37 @@ export class MessagesService {
     });
     if (!msg) return [null, 'Message not found'];
     return [msg, null];
+  }
+
+  async getMsgWithSenderInfo(msgId: number) {
+    const msg = await this.messageRepository.findOne({
+      where: { id: msgId },
+      relations: {
+        sender: true,
+      },
+    });
+    return msg;
+  }
+
+  async getMsgWithSenderAndFiles(msgId: number) {
+    const msg = await this.messageRepository.findOne({
+      where: { id: msgId },
+      relations: {
+        sender: true,
+        files: true,
+      },
+    });
+    return msg;
+  }
+
+  getLinkFromTextMsg(text: string) {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    let link: string = null;
+    if (text) {
+      const links = text.match(urlRegex);
+      if (links && links.length > 0) link = links[0];
+    }
+    return link;
   }
 
   async getAllMsgsOfRoom(
@@ -84,20 +119,15 @@ export class MessagesService {
       for (const file of files) {
         const uploadedFile = await this.googleApiService.uploadFile(file);
         const networkFile = new NetworkFile();
-        networkFile.filename = file.originalname;
-        networkFile.mimeType = file.mimetype;
-        networkFile.fileIdOnDrive = uploadedFile.id;
-        networkFile.url = getGoogleDriveUrl(uploadedFile.id);
+        networkFile
+          .setFilename(file.originalname)
+          .setMimeType(file.mimetype)
+          .setFileIdOnDrive(uploadedFile.id)
+          .setUrl(getGoogleDriveUrl(uploadedFile.id));
         msgFiles.push(networkFile);
       }
     }
-
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    let link: string = null;
-    if (text) {
-      const links = text.match(urlRegex);
-      if (links && links.length > 0) link = links[0];
-    }
+    const link = this.getLinkFromTextMsg(text);
     const msg = await this.messageRepository.create({
       type,
       text: !text ? null : text,
@@ -118,65 +148,50 @@ export class MessagesService {
   }
 
   async editMsgText(self: Account, msgId: number, text: string) {
-    const msg = await this.messageRepository.findOne({
-      where: { id: msgId },
-      relations: {
-        sender: true,
-      },
-    });
+    const msg = await this.getMsgWithSenderInfo(msgId);
     if (!msg) return [null, 'Message not found'];
     if (msg.sender.id != self.id)
       return [null, 'Can not edit message of other ones'];
+    const defaultTimesAllowEdit = 10;
     // more than 10 minutes
-    if ((new Date().getTime() - msg.createdAt.getTime()) / (1000 * 60) > 10)
-      return [null, 'More than 10 minutes since created'];
+    if (
+      (new Date().getTime() - msg.createdAt.getTime()) / (1000 * 60) >
+      defaultTimesAllowEdit
+    )
+      return [null, `More than ${defaultTimesAllowEdit} minutes since created`];
     msg.text = text;
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    let link: string = null;
-    if (text) {
-      const links = text.match(urlRegex);
-      if (links && links.length > 0) link = links[0];
-    }
-    msg.link = link;
+    msg.link = this.getLinkFromTextMsg(text);
     await this.messageRepository.save(msg);
     return [msg, null];
   }
 
   async recallMsg(self: Account, msgId: number) {
-    const msg = await this.messageRepository.findOne({
-      where: { id: msgId },
-      relations: {
-        sender: true,
-        files: true,
-      },
-    });
+    const msg = await this.getMsgWithSenderAndFiles(msgId);
     if (!msg) return [null, 'Message not found'];
     if (msg.sender.id != self.id)
       return [null, 'Can not recall message of other ones'];
     msg.isDeleted = true;
-    const fileIds = [];
+    const fileIdsInDB = [];
+    const fileIdsOnDrive = [];
     if (msg.files && msg.files.length > 0) {
-      console.log(msg.files);
-      const fileIdsOnDrive = [];
       for (const file of msg.files) {
         fileIdsOnDrive.push(file.fileIdOnDrive);
-        fileIds.push(file.id);
+        fileIdsInDB.push(file.id);
       }
       await this.googleApiService.deleteMultipleFiles(fileIdsOnDrive);
     }
     msg.files = null;
     await this.messageRepository.save(msg);
-    if (fileIds.length > 0) await this.networkFileRepository.delete(fileIds);
+    if (fileIdsInDB.length > 0)
+      await this.networkFileRepository.delete(fileIdsInDB);
     return [msg, null];
   }
 
   async getAllPinMsgs(self: Account, roomId: number) {
-    const selfMember = await this.memberRepository.findOne({
-      where: { account: { id: self.id }, room: { id: roomId } },
-      relations: {
-        room: true,
-      },
-    });
+    const selfMember = await this.memberService.getMemberWithRoomRelation(
+      self.id,
+      roomId,
+    );
     if (!selfMember) return [null, 'Room not found'];
     const pinMsgs = await this.messageRepository.find({
       where: {
@@ -194,12 +209,10 @@ export class MessagesService {
   }
 
   async togglePinMsg(self: Account, msgId: number) {
-    const selfMember = await this.memberRepository.findOne({
-      where: { account: { id: self.id }, room: { messages: { id: msgId } } },
-      relations: {
-        room: { messages: true },
-      },
-    });
+    const selfMember = await this.memberService.getMemberWithMsg(
+      self.id,
+      msgId,
+    );
     if (!selfMember) return [null, 'Message not found'];
     const msg = selfMember.room.messages[0];
     msg.isPin = true ? false : true;

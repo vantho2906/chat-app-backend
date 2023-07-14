@@ -1,17 +1,17 @@
-import TestNestjsConfig from '../etc/config';
+import ChatAppConfig from '../etc/config';
 import { DataSource } from 'typeorm';
 import * as path from 'path';
 
-const TestNestjsDataSource = new DataSource({
+const ChatAppDataSource = new DataSource({
   type: 'mysql',
-  port: TestNestjsConfig.PORT,
-  host: TestNestjsConfig.HOST,
-  username: TestNestjsConfig.USERNAME,
-  password: TestNestjsConfig.PASSWORD,
-  database: TestNestjsConfig.DATABASE,
+  port: ChatAppConfig.DB_PORT,
+  host: ChatAppConfig.DB_HOST,
+  username: ChatAppConfig.DB_USERNAME,
+  password: ChatAppConfig.DB_PASSWORD,
+  database: ChatAppConfig.DATABASE,
   entities: [path.resolve(__dirname + '/../**/*.entity.{js,ts}')],
   migrations: [path.resolve(__dirname + '/../migrations/*.{js,ts}')],
   logger: 'advanced-console',
   logging: 'all',
 });
-export default TestNestjsDataSource;
+export default ChatAppDataSource;

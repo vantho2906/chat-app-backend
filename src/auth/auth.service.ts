@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import { AccountsService } from '../accounts/accounts.service';
-import TestNestjsConfig from '../etc/config';
-import { ChatRoomTypeEnum, SignInWay } from 'etc/enums';
+import ChatAppConfig from '../etc/config';
+import { ChatRoomTypeEnum } from 'etc/enums';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Account } from 'accounts/entities/account.entity';
 import { Repository } from 'typeorm';
@@ -14,7 +14,6 @@ import { FirstStepNormalRegisterDto } from 'auth/dtos/first-step-normal-register
 import { NormalLoginDto } from './dtos/normal-login-dto';
 import { FinalStepNormalRegisterDto } from './dtos/final-step-normal-register-dto';
 import { GoogleApiService } from 'google-api/google-api.service';
-import { getGoogleDriveUrl } from 'etc/google-drive-url';
 import { ChatRoomsService } from 'chat-rooms/chat-rooms.service';
 @Injectable()
 export class AuthService {
@@ -34,11 +33,11 @@ export class AuthService {
   ) {}
 
   async getInfoFromGoogle(credential: string) {
-    const client = new OAuth2Client(TestNestjsConfig.GOOGLE_CLIENT_ID);
+    const client = new OAuth2Client(ChatAppConfig.GOOGLE_CLIENT_ID);
     try {
       const ticket = await client.verifyIdToken({
         idToken: credential,
-        audience: TestNestjsConfig.GOOGLE_CLIENT_ID,
+        audience: ChatAppConfig.GOOGLE_CLIENT_ID,
       });
       const payload = ticket.getPayload();
       console.log(payload);
@@ -59,8 +58,8 @@ export class AuthService {
     // Check database
     const account = await this.accountsService.getByEmail(email);
     if (!account) {
-      const imageUrl = payload.picture;
-      const response = await this.httpService.get(imageUrl).toPromise();
+      // const imageUrl = payload.picture;
+      // const response = await this.httpService.get(imageUrl).toPromise();
       // const contentType = response.headers['content-type'];
       const newAccount = new Account();
       newAccount.email = email;
@@ -93,8 +92,8 @@ export class AuthService {
   async firstStepOfNormalRegister(info: FirstStepNormalRegisterDto) {
     if (info.password != info.confirmPassword)
       return [null, 'Passwords do not match'];
-    if (await this.accountsService.getByEmail(info.email))
-      return [null, 'Email existed'];
+    const isEmailExist = !!(await this.accountsService.getByEmail(info.email));
+    if (isEmailExist) return [null, 'Email existed'];
     this.otpService.sendOtp(info.email);
     return [true, null];
   }
@@ -107,12 +106,6 @@ export class AuthService {
       info.email,
     );
     if (!isMatchOTP) return [null, 'OTP not match or expired'];
-    // const avatar = await this.googleApiService.getFileByName(
-    //   info.fname.trim()[0].toUpperCase() + '.png',
-    // );
-    // console.log(avatar);
-    // console.log(info.fname.trim()[0]);
-    // if (!avatar) return [null, 'File not found'];
     const accountCreate = this.accountRepository.create({
       email: info.email,
       password: info.password,
@@ -134,10 +127,9 @@ export class AuthService {
       where: { id: self.id },
     });
     if (selfWithPassword.password) {
-      if (
-        !selfWithPassword.checkIfUnencryptedPasswordIsValid(oldPassword.trim())
-      )
-        return [null, 'Old password not correct'];
+      const isOldPasswordCorrect =
+        selfWithPassword.checkIfUnencryptedPasswordIsValid(oldPassword.trim());
+      if (!isOldPasswordCorrect) return [null, 'Old password not correct'];
     }
     if (newPassword != confirmNewPassword)
       return [null, 'Confirm password not correct'];

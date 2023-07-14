@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Account } from './entities/account.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { GoogleApiService } from 'google-api/google-api.service';
 import { NetworkFile } from 'network-files/entities/networkFile.entity';
 import { getGoogleDriveFileID, getGoogleDriveUrl } from 'etc/google-drive-url';
@@ -29,6 +29,20 @@ export class AccountsService {
     return await this.accountRepository.findOne({
       where: { id, isActive: true },
     });
+  }
+
+  async getListOfAccounts(idList: string[]) {
+    const accounts = await this.accountRepository.find({
+      where: { id: In(idList) },
+      select: {
+        id: true,
+        fname: true,
+        lname: true,
+        isActive: true,
+        avatarUrl: true,
+      },
+    });
+    return accounts;
   }
 
   async getAll() {
@@ -69,7 +83,6 @@ export class AccountsService {
       return [account, null];
     }
     keyword = '%' + keyword.toLowerCase().trim().split(' ').join('%') + '%';
-    console.log(keyword);
     const accounts = await this.accountRepository
       .createQueryBuilder('account')
       .innerJoin('account.avatar', 'avatar')

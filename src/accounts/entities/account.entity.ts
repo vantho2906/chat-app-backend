@@ -2,11 +2,9 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   ManyToMany,
-  JoinColumn,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { GenderEnum, RoleEnum } from '../../etc/enums';

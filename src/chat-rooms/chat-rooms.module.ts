@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ChatRoomsService } from './chat-rooms.service';
 import { ChatRoomsController } from './chat-rooms.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -10,6 +10,8 @@ import { NetworkFile } from 'network-files/entities/networkFile.entity';
 import { GoogleApiModule } from 'google-api/google-api.module';
 import { MessagesModule } from 'messages/messages.module';
 import { Approval } from 'approvals/entities/approval.entity';
+import { AccountsModule } from 'accounts/accounts.module';
+import { MembersModule } from 'members/members.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { Approval } from 'approvals/entities/approval.entity';
     ]),
     GoogleApiModule,
     MessagesModule,
+    AccountsModule,
+    MembersModule,
   ],
   controllers: [ChatRoomsController],
   providers: [ChatRoomsService],

@@ -10,6 +10,8 @@ import { Approval } from './entities/approval.entity';
 import { GoogleApiModule } from 'google-api/google-api.module';
 import { MessagesModule } from 'messages/messages.module';
 import { Account } from 'accounts/entities/account.entity';
+import { ChatRoomsModule } from 'chat-rooms/chat-rooms.module';
+import { MembersModule } from 'members/members.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { Account } from 'accounts/entities/account.entity';
     ]),
     GoogleApiModule,
     MessagesModule,
+    ChatRoomsModule,
+    MembersModule,
   ],
   controllers: [ApprovalsController],
   providers: [ApprovalsService],

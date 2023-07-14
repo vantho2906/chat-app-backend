@@ -2,10 +2,10 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-
+import ChatAppConfig from 'etc/config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const PORT = 3001;
+  const PORT = ChatAppConfig.PORT;
   app.useGlobalPipes(new ValidationPipe());
   const config = new DocumentBuilder()
     .setTitle('TEST APP API')
@@ -17,7 +17,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
   app.enableCors();
 
-  app.listen(PORT, () => {
+  await app.listen(PORT, () => {
     console.log(`App is listening on PORT ${PORT}`);
   });
 }

@@ -32,4 +32,29 @@ export class Member {
     onDelete: 'CASCADE',
   })
   room: ChatRoom;
+
+  setRole(role: MemberRoleEnum) {
+    this.role = role;
+    return this;
+  }
+
+  setIsRoomLimited(isRoomLimited: boolean) {
+    this.isRoomLimited = isRoomLimited;
+    return this;
+  }
+
+  setNickname(nickname: string) {
+    this.nickname = nickname;
+    return this;
+  }
+
+  setAccount(account: Account) {
+    this.account = account;
+    return this;
+  }
+
+  setRoom(room: ChatRoom) {
+    this.room = room;
+    return this;
+  }
 }

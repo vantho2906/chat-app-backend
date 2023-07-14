@@ -75,7 +75,7 @@ export class ChatRoomsController {
     @CurrentAccount() self: Account,
     @Param('roomId') roomId: number,
   ) {
-    const [data, err] = await this.chatRoomsService.getAllRoomMembers(
+    const [data, err] = await this.chatRoomsService.getAllMembersInRoom(
       self,
       roomId,
     );
