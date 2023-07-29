@@ -17,7 +17,6 @@ import { Approval } from 'approvals/entities/approval.entity';
 import { convertMemberRoomRole } from 'etc/convert-member-room-role';
 import { Notification } from 'notifications/entities/notification.entity';
 import { NotiEndUser } from 'noti-end-users/entities/noti-end-user.entity';
-import { ChatRoomsService } from 'chat-rooms/chat-rooms.service';
 import { AccountsService } from 'accounts/accounts.service';
 
 @Injectable()

@@ -41,7 +41,6 @@ export class OtpsService {
   async sendOtp(email: string) {
     const otp = this.generateOTP();
     this.cacheManager.set(email, otp, 5 * 60 * 1000);
-
     const text = `Your OTP is ${otp}. OTP is only valid in 5 minutes`;
     if (!this.sendEmail(email, text)) return [null, 'Send OTP failed'];
     return [true, null];
