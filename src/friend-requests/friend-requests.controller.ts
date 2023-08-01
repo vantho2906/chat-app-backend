@@ -18,6 +18,28 @@ import ResponseObject from 'etc/response-object';
 export class FriendRequestsController {
   constructor(private readonly friendRequestsService: FriendRequestsService) {}
 
+  @Get('get-all-requests/')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getAllRequests(@CurrentAccount() self: Account) {
+    const [data, err] = await this.friendRequestsService.getAllRequests(
+      self.id,
+    );
+    if (err)
+      return new ResponseObject(
+        HttpStatus.BAD_REQUEST,
+        'Get all requests failed',
+        null,
+        err,
+      );
+    return new ResponseObject(
+      HttpStatus.OK,
+      'Get all requests success',
+      data,
+      null,
+    );
+  }
+
   @Post('send-friend-request/:receiverId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

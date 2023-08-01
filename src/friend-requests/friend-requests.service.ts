@@ -46,6 +46,21 @@ export class FriendRequestsService {
     return request;
   }
 
+  async getAllRequests(selfId: string) {
+    const requests: FriendRequest[] = await this.friendRequestRepository.find({
+      relations: {
+        sender: true,
+      },
+      where: {
+        receiver: { id: selfId },
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+    return [requests, null];
+  }
+
   async sendFriendRequest(selfId: string, receiverId: string) {
     const receiver: Account = await this.accountsService.getById(receiverId);
     if (!receiver) return [null, 'User not found'];
