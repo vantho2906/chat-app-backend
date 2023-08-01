@@ -18,6 +18,8 @@ import ChatAppDataSource from './database/datasource';
 import { SocketModule } from 'socket/socket.module';
 import { FriendsModule } from './friends/friends.module';
 import { NotiEndUsersModule } from './noti-end-users/noti-end-users.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -37,8 +39,18 @@ import { NotiEndUsersModule } from './noti-end-users/noti-end-users.module';
     OtpsModule,
     SocketModule,
     ReactsModule,
+    ThrottlerModule.forRoot({
+      ttl: 60,
+      limit: 20,
+    }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
