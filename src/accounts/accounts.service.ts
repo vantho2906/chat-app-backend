@@ -85,7 +85,6 @@ export class AccountsService {
     keyword = '%' + keyword.toLowerCase().trim().split(' ').join('%') + '%';
     const accounts = await this.accountRepository
       .createQueryBuilder('account')
-      .innerJoin('account.avatar', 'avatar')
       .where(`LOWER(CONCAT(account.lname, ' ', account.fname)) LIKE :keyword`, {
         keyword: keyword,
       })
