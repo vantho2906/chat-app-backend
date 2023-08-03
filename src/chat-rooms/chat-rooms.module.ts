@@ -12,6 +12,7 @@ import { MessagesModule } from 'messages/messages.module';
 import { Approval } from 'approvals/entities/approval.entity';
 import { AccountsModule } from 'accounts/accounts.module';
 import { MembersModule } from 'members/members.module';
+import { Notification } from 'notifications/entities/notification.entity';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { MembersModule } from 'members/members.module';
       Member,
       NetworkFile,
       Approval,
+      Notification,
     ]),
     GoogleApiModule,
     MessagesModule,

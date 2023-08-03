@@ -85,6 +85,7 @@ export enum NotificationTypeEnum {
   APPROVAL = 'Approval',
   MESSAGE = 'Message',
   FRIEND_REQUEST = 'Friend Request',
+  DELETE_ROOM = 'Delete Room',
 }
 
 export enum HandleApprovalEnum {

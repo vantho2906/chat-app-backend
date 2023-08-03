@@ -50,22 +50,24 @@ export class MessagesService {
     return [msg, null];
   }
 
-  async getMsgWithSenderInfo(msgId: number) {
+  async getMsgWithSenderAndRoomInfo(msgId: number) {
     const msg = await this.messageRepository.findOne({
       where: { id: msgId },
       relations: {
         sender: true,
+        room: true,
       },
     });
     return msg;
   }
 
-  async getMsgWithSenderAndFiles(msgId: number) {
+  async getMsgWithSenderAndRoomAndFiles(msgId: number) {
     const msg = await this.messageRepository.findOne({
       where: { id: msgId },
       relations: {
         sender: true,
         files: true,
+        room: true,
       },
     });
     return msg;
@@ -79,6 +81,18 @@ export class MessagesService {
       if (links && links.length > 0) link = links[0];
     }
     return link;
+  }
+
+  async getRoomByMsgId(msgId: number) {
+    const msg = await this.messageRepository.findOne({
+      where: {
+        id: msgId,
+      },
+      relations: {
+        room: true,
+      },
+    });
+    return msg.room;
   }
 
   async getAllMsgsOfRoom(
@@ -148,7 +162,7 @@ export class MessagesService {
   }
 
   async editMsgText(self: Account, msgId: number, text: string) {
-    const msg = await this.getMsgWithSenderInfo(msgId);
+    const msg = await this.getMsgWithSenderAndRoomInfo(msgId);
     if (!msg) return [null, 'Message not found'];
     if (msg.sender.id != self.id)
       return [null, 'Can not edit message of other ones'];
@@ -166,7 +180,7 @@ export class MessagesService {
   }
 
   async recallMsg(self: Account, msgId: number) {
-    const msg = await this.getMsgWithSenderAndFiles(msgId);
+    const msg = await this.getMsgWithSenderAndRoomAndFiles(msgId);
     if (!msg) return [null, 'Message not found'];
     if (msg.sender.id != self.id)
       return [null, 'Can not recall message of other ones'];

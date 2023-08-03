@@ -10,6 +10,7 @@ import {
   FileTypeOtherEnum,
   MemberRoleEnum,
   MessageTypeEnum,
+  NotificationTypeEnum,
 } from 'etc/enums';
 import { Account } from 'accounts/entities/account.entity';
 import { Member } from 'members/entities/member.entity';
@@ -19,6 +20,8 @@ import { MessagesService } from 'messages/messages.service';
 import { Approval } from 'approvals/entities/approval.entity';
 import { AccountsService } from 'accounts/accounts.service';
 import { MembersService } from 'members/members.service';
+import { NotiEndUser } from 'noti-end-users/entities/noti-end-user.entity';
+import { Notification } from 'notifications/entities/notification.entity';
 
 @Injectable()
 export class ChatRoomsService {
@@ -37,6 +40,9 @@ export class ChatRoomsService {
 
     @InjectRepository(NetworkFile)
     private readonly networkFileRepository: Repository<NetworkFile>,
+
+    @InjectRepository(Notification)
+    private readonly notificationRepository: Repository<Notification>,
 
     private readonly googleApiService: GoogleApiService,
 
@@ -291,6 +297,9 @@ export class ChatRoomsService {
       where: {
         room: { id: roomId },
       },
+      relations: {
+        account: true,
+      },
     });
     return [members, null];
   }
@@ -316,7 +325,21 @@ export class ChatRoomsService {
       await this.googleApiService.deleteMultipleFiles(fileIdsOnDrive);
     }
     await this.chatRoomRepository.delete(room.id);
-    return [true, null];
+    let [members, err] = await this.getAllMembersInRoom(self, roomId);
+    members = members as Member[];
+    const endUsers: NotiEndUser[] = members.map((member) => {
+      const endUser = new NotiEndUser();
+      endUser.receiver = member.account;
+      return endUser;
+    });
+    const notification = await this.notificationRepository.save({
+      type: NotificationTypeEnum.DELETE_ROOM,
+      content: `${self.lname} ${self.fname} delete room ${room.name}`,
+      link: null,
+      actor: self,
+      endUsers,
+    });
+    return [notification, null];
   }
 
   async toggleApprovalFeature(self: Account, roomId: number) {

@@ -12,6 +12,8 @@ import {
 import { AccountsService } from 'accounts/accounts.service';
 import { Account } from 'accounts/entities/account.entity';
 import { ChatRoomsService } from 'chat-rooms/chat-rooms.service';
+import { ChatRoom } from 'chat-rooms/entities/chat-room.entity';
+import { ChatRoomTypeEnum } from 'etc/enums';
 import { FriendRequest } from 'friend-requests/entities/friendRequest.entity';
 import { FriendRequestsService } from 'friend-requests/friend-requests.service';
 import { MembersService } from 'members/members.service';
@@ -168,9 +170,105 @@ export class SocketsGateway
     if (err) {
       client.emit('exception', err);
     } else {
+      const room = await this.messageService.getRoomByMsgId(msgId);
+      this.io.in(room.id.toString()).emit('receive-recall-msg', data);
+    }
+  }
+
+  @SubscribeMessage('send-msg')
+  async sendMsg(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('msgId') msgId: number,
+  ) {
+    const msg = await this.messageService.getMsgWithSenderAndRoomAndFiles(
+      msgId,
+    );
+    if (!msg) {
+      client.emit('exception', 'Failed to send msg! Message not found');
+    } else {
+      this.io.in(msg.room.id.toString()).emit('receive-send-msg', msg);
+    }
+  }
+
+  @SubscribeMessage('edit-msg')
+  async editMsgText(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('msgId') msgId: number,
+    @MessageBody('text') text: string,
+  ) {
+    const [msg, err] = await this.messageService.editMsgText(
+      client.data.account,
+      msgId,
+      text,
+    );
+    if (err) {
+      client.emit('exception', err);
+    } else {
       this.io
-        .in((data as Message).room.id.toString())
-        .emit('receive-recall-msg', data);
+        .in((msg as Message).room.id.toString())
+        .emit('receive-edit-msg', msg);
+    }
+  }
+
+  @SubscribeMessage('delete-room')
+  async deleteRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('roomId') roomId: number,
+  ) {
+    const [notification, err] = await this.chatRoomsService.deleteRoom(
+      client.data.account,
+      roomId,
+    );
+    if (err) {
+      client.emit('exception', err);
+    } else {
+      this.io.in(roomId.toString()).emit('receive-delete-room', notification);
+    }
+  }
+
+  @SubscribeMessage('create-room')
+  async createRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('memberIDsAdded') memberIDsAdded: string[],
+    @MessageBody('type') type: ChatRoomTypeEnum,
+  ) {
+    const [room, err] = await this.chatRoomsService.createRoom(
+      client.data.account,
+      memberIDsAdded,
+      type,
+    );
+    if (err) {
+      client.emit('exception', err);
+    } else {
+      for (const memberID of memberIDsAdded) {
+        this.io
+          .in(memberID)
+          .emit('receive-create-room', { roomId: (room as ChatRoom).id });
+      }
+    }
+  }
+
+  @SubscribeMessage('join-room')
+  async joinRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('roomId') roomId: number,
+  ) {
+    client.join(roomId.toString());
+  }
+
+  @SubscribeMessage('leave-room')
+  async leaveRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('roomId') roomId: number,
+  ) {
+    const [msg, err] = await this.chatRoomsService.leaveRoom(
+      client.data.account,
+      roomId,
+    );
+    if (err) {
+      client.emit('exception', err);
+    } else {
+      if (msg != true) client.to(roomId.toString()).emit('msg', msg);
     }
   }
 }
