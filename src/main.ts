@@ -19,7 +19,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
   app.enableCors();
-  app.use(helmet());
+  // app.use(helmet());
   app.useWebSocketAdapter(new SocketIoAdapter(app));
   await app.listen(PORT, () => {
     console.log(`App is listening on PORT ${PORT}`);

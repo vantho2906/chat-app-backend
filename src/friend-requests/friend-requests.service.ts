@@ -64,7 +64,7 @@ export class FriendRequestsService {
   async getAllRequestsSent(selfId: string) {
     const requests: FriendRequest[] = await this.friendRequestRepository.find({
       relations: {
-        sender: true,
+        receiver: true,
       },
       where: {
         sender: { id: selfId },
