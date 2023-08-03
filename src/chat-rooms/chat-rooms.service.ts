@@ -120,8 +120,8 @@ export class ChatRoomsService {
         return [room, null];
         break;
       case ChatRoomTypeEnum.MULTIPLE_USERS:
-        if (memberIDsAdded.length == 0 || memberIDsAdded.length >= 50)
-          return [null, 'Number of members is between 2 and 50'];
+        if (memberIDsAdded.length == 0 || memberIDsAdded.length > 10)
+          return [null, 'Number of members is between 2 and 10'];
         const activeMembers: Account[] =
           await this.accountService.getListOfAccounts(memberIDsAdded);
         if (activeMembers.length < memberIDsAdded.length)

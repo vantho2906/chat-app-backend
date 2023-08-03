@@ -92,4 +92,12 @@ export class AccountsService {
       .getMany();
     return [accounts, null];
   }
+
+  async updateTimeOffline(accountId) {
+    const account = await this.getById(accountId);
+    if (!account) return [null, 'Account not found'];
+    account.offlineAt = new Date();
+    this.accountRepository.save(account);
+    return [account, null];
+  }
 }

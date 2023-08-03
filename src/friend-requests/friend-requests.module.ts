@@ -16,5 +16,6 @@ import { Friend } from 'friends/entities/friend.entity';
   ],
   controllers: [FriendRequestsController],
   providers: [FriendRequestsService],
+  exports: [FriendRequestsService],
 })
 export class FriendRequestsModule {}

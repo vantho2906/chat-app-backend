@@ -19,8 +19,8 @@ import { Repository } from 'typeorm';
 @Injectable()
 export class MyGateway {
   constructor(
-    private onlineUsers: Map<string, string[]>,
-    private onlineUsersReverse: Map<string, string>,
+    private onlineUsers: Map<string, string[]>, //key is account ID, value is an array of client id
+    private onlineUsersReverse: Map<string, string>, //key is client ID, value is account ID
 
     private readonly chatRoomsService: ChatRoomsService,
 

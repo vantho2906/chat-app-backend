@@ -22,4 +22,5 @@ export default class ChatAppConfig {
   static readonly REDIRECT_URL = process.env.REDIRECT_URL;
   static readonly REFRESH_TOKEN = process.env.REFRESH_TOKEN;
   static readonly FOLDER_ID = process.env.FOLDER_ID;
+  static readonly CLIENT_PORT = process.env.CLIENT_PORT;
 }

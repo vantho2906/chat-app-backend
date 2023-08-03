@@ -15,7 +15,7 @@ import { AuthModule } from './auth/auth.module';
 import { OtpsModule } from './otps/otps.module';
 import { GoogleApiModule } from './google-api/google-api.module';
 import ChatAppDataSource from './database/datasource';
-import { SocketModule } from 'socket/socket.module';
+import { SocketModule } from 'sockets/sockets.module';
 import { FriendsModule } from './friends/friends.module';
 import { NotiEndUsersModule } from './noti-end-users/noti-end-users.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';

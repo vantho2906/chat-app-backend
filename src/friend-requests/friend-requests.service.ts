@@ -61,6 +61,21 @@ export class FriendRequestsService {
     return [requests, null];
   }
 
+  async getAllRequestsSent(selfId: string) {
+    const requests: FriendRequest[] = await this.friendRequestRepository.find({
+      relations: {
+        sender: true,
+      },
+      where: {
+        sender: { id: selfId },
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+    return [requests, null];
+  }
+
   async sendFriendRequest(selfId: string, receiverId: string) {
     const receiver: Account = await this.accountsService.getById(receiverId);
     if (!receiver) return [null, 'User not found'];
@@ -87,7 +102,7 @@ export class FriendRequestsService {
     const request: FriendRequest = await this.getRequest(selfId, opponentId);
     if (!request) return [null, 'Friend request not exist'];
     await this.friendRequestRepository.delete(request.id);
-    return [true, null];
+    return [request, null];
   }
 
   async isFriend(selfId: string, opponentId: string) {

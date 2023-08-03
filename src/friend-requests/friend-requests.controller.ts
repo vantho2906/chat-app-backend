@@ -40,6 +40,28 @@ export class FriendRequestsController {
     );
   }
 
+  @Get('get-all-requests-sent')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getAllRequestsSent(@CurrentAccount() self: Account) {
+    const [data, err] = await this.friendRequestsService.getAllRequestsSent(
+      self.id,
+    );
+    if (err)
+      return new ResponseObject(
+        HttpStatus.BAD_REQUEST,
+        'Get all requests failed',
+        null,
+        err,
+      );
+    return new ResponseObject(
+      HttpStatus.OK,
+      'Get all requests success',
+      data,
+      null,
+    );
+  }
+
   @Post('send-friend-request/:receiverId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
