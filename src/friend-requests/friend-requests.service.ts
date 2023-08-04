@@ -163,7 +163,7 @@ export class FriendRequestsService {
     await this.friendRequestRepository.delete(request.id);
     await this.friendRepository.save({
       account1: { id: self.id },
-      account2: { id: self.id },
+      account2: { id: opponentId },
     });
     return [true, null];
   }
