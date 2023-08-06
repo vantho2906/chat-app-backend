@@ -99,7 +99,10 @@ export class FriendRequestsService {
   async cancelFriendRequest(selfId: string, opponentId: string) {
     const opponent: Account = await this.accountsService.getById(opponentId);
     if (!opponent) return [null, 'User not found'];
-    const request: FriendRequest = await this.getRequest(selfId, opponentId);
+    const request: FriendRequest = await this.getRequestWithRelations(
+      selfId,
+      opponentId,
+    );
     if (!request) return [null, 'Friend request not exist'];
     await this.friendRequestRepository.delete(request.id);
     return [request, null];

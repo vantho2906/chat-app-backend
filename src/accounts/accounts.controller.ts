@@ -57,7 +57,7 @@ export class AccountsController {
     @UploadedFile(
       new ParseFilePipe({
         validators: [
-          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 20 }),
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 10 }),
           new FileTypeValidator({
             fileType: 'image/jpeg|image/png|image/jpg|image/svg|image/gif',
           }),
