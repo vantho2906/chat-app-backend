@@ -13,9 +13,16 @@ import { AccountsService } from 'accounts/accounts.service';
 import { Account } from 'accounts/entities/account.entity';
 import { ChatRoomsService } from 'chat-rooms/chat-rooms.service';
 import { ChatRoom } from 'chat-rooms/entities/chat-room.entity';
-import { ChatRoomTypeEnum } from 'etc/enums';
+import {
+  ChatRoomTypeEnum,
+  ClientSocketEventsEnum,
+  MessageTypeSocketResponseEnum,
+  NotificationTypeEnum,
+} from 'etc/enums';
+import ResponseObjectSocket from 'etc/response-object-socket';
 import { FriendRequest } from 'friend-requests/entities/friendRequest.entity';
 import { FriendRequestsService } from 'friend-requests/friend-requests.service';
+import { Friend } from 'friends/entities/friend.entity';
 import { MembersService } from 'members/members.service';
 import { Message } from 'messages/entities/message.entity';
 import { MessagesService } from 'messages/messages.service';
@@ -84,11 +91,17 @@ export class SocketsGateway
       receiverId,
     );
     if (err) {
-      client.emit('exception', err);
+      client.emit(ClientSocketEventsEnum.EXCEPTION, err);
     } else {
       this.io
         .in(receiverId)
-        .emit('receive-friend-request', data as FriendRequest);
+        .emit(
+          ClientSocketEventsEnum.NOTIFICATION,
+          new ResponseObjectSocket(
+            NotificationTypeEnum.FRIEND_REQUEST,
+            data as FriendRequest,
+          ),
+        );
     }
   }
 
@@ -102,11 +115,17 @@ export class SocketsGateway
       opponentId,
     );
     if (err) {
-      client.emit('exception', err);
+      client.emit(ClientSocketEventsEnum.EXCEPTION, err);
     } else {
       this.io
         .in(opponentId)
-        .emit('receive-cancel-friend-request', data as FriendRequest);
+        .emit(
+          ClientSocketEventsEnum.NOTIFICATION,
+          new ResponseObjectSocket(
+            NotificationTypeEnum.DELETE,
+            data as FriendRequest,
+          ),
+        );
     }
   }
 
@@ -122,19 +141,35 @@ export class SocketsGateway
       targetAccountId,
     );
     if (err) {
-      client.emit('exception', err);
+      client.emit(ClientSocketEventsEnum.EXCEPTION, err);
     } else {
       if (data == true) {
-        client.emit('exception', 'Waiting for approval');
+        client.emit(ClientSocketEventsEnum.EXCEPTION, 'Waiting for approval');
       } else {
         const notification = data as Notification;
         if (notification.content) {
           const adminAndViceIds = notification.endUsers.map((endUser) => {
             return endUser.receiver.id;
           });
-          this.io.in(adminAndViceIds).emit('notification', notification);
+          this.io
+            .in(adminAndViceIds)
+            .emit(
+              ClientSocketEventsEnum.NOTIFICATION,
+              new ResponseObjectSocket(
+                NotificationTypeEnum.APPROVAL,
+                notification,
+              ),
+            );
         } else {
-          this.io.in(roomId.toString()).emit('msg', data);
+          this.io
+            .in(roomId.toString())
+            .emit(
+              'msg',
+              new ResponseObjectSocket(
+                MessageTypeSocketResponseEnum.SYSTEM,
+                data,
+              ),
+            );
         }
       }
     }
@@ -152,9 +187,14 @@ export class SocketsGateway
       targetAccountId,
     );
     if (err) {
-      client.emit('exception', err);
+      client.emit(ClientSocketEventsEnum.EXCEPTION, err);
     } else {
-      this.io.in(roomId.toString()).emit('msg', data);
+      this.io
+        .in(roomId.toString())
+        .emit(
+          ClientSocketEventsEnum.MSG,
+          new ResponseObjectSocket(MessageTypeSocketResponseEnum.SYSTEM, data),
+        );
     }
   }
 
@@ -168,10 +208,15 @@ export class SocketsGateway
       msgId,
     );
     if (err) {
-      client.emit('exception', err);
+      client.emit(ClientSocketEventsEnum.EXCEPTION, err);
     } else {
       const room = await this.messageService.getRoomByMsgId(msgId);
-      this.io.in(room.id.toString()).emit('receive-recall-msg', data);
+      this.io
+        .in(room.id.toString())
+        .emit(
+          ClientSocketEventsEnum.MSG,
+          new ResponseObjectSocket(MessageTypeSocketResponseEnum.RECALL, data),
+        );
     }
   }
 
@@ -184,9 +229,17 @@ export class SocketsGateway
       msgId,
     );
     if (!msg) {
-      client.emit('exception', 'Failed to send msg! Message not found');
+      client.emit(
+        ClientSocketEventsEnum.EXCEPTION,
+        'Failed to send msg! Message not found',
+      );
     } else {
-      this.io.in(msg.room.id.toString()).emit('receive-send-msg', msg);
+      this.io
+        .in(msg.room.id.toString())
+        .emit(
+          ClientSocketEventsEnum.MSG,
+          new ResponseObjectSocket(MessageTypeSocketResponseEnum.CREATE, msg),
+        );
     }
   }
 
@@ -202,11 +255,14 @@ export class SocketsGateway
       text,
     );
     if (err) {
-      client.emit('exception', err);
+      client.emit(ClientSocketEventsEnum.EXCEPTION, err);
     } else {
       this.io
         .in((msg as Message).room.id.toString())
-        .emit('receive-edit-msg', msg);
+        .emit(
+          ClientSocketEventsEnum.MSG,
+          new ResponseObjectSocket(MessageTypeSocketResponseEnum.EDIT, msg),
+        );
     }
   }
 
@@ -220,9 +276,17 @@ export class SocketsGateway
       roomId,
     );
     if (err) {
-      client.emit('exception', err);
+      client.emit(ClientSocketEventsEnum.EXCEPTION, err);
     } else {
-      this.io.in(roomId.toString()).emit('receive-delete-room', notification);
+      this.io
+        .in(roomId.toString())
+        .emit(
+          ClientSocketEventsEnum.NOTIFICATION,
+          new ResponseObjectSocket(
+            NotificationTypeEnum.DELETE_ROOM,
+            notification,
+          ),
+        );
     }
   }
 
@@ -238,12 +302,12 @@ export class SocketsGateway
       type,
     );
     if (err) {
-      client.emit('exception', err);
+      client.emit(ClientSocketEventsEnum.EXCEPTION, err);
     } else {
       for (const memberID of memberIDsAdded) {
-        this.io
-          .in(memberID)
-          .emit('receive-create-room', { roomId: (room as ChatRoom).id });
+        this.io.in(memberID).emit(ClientSocketEventsEnum.RECEIVE_CREATE_ROOM, {
+          roomId: (room as ChatRoom).id,
+        });
       }
     }
   }
@@ -266,9 +330,15 @@ export class SocketsGateway
       roomId,
     );
     if (err) {
-      client.emit('exception', err);
+      client.emit(ClientSocketEventsEnum.EXCEPTION, err);
     } else {
-      if (msg != true) client.to(roomId.toString()).emit('msg', msg);
+      if (msg != true)
+        client
+          .to(roomId.toString())
+          .emit(
+            ClientSocketEventsEnum.MSG,
+            new ResponseObjectSocket(MessageTypeSocketResponseEnum.SYSTEM, msg),
+          );
     }
   }
 }

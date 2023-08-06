@@ -57,9 +57,6 @@ export class AuthService {
     // Check database
     const account = await this.accountsService.getByEmail(email);
     if (!account) {
-      // const imageUrl = payload.picture;
-      // const response = await this.httpService.get(imageUrl).toPromise();
-      // const contentType = response.headers['content-type'];
       const newAccount = new Account();
       newAccount.email = email;
       newAccount.fname = payload.given_name;

@@ -86,6 +86,8 @@ export enum NotificationTypeEnum {
   MESSAGE = 'Message',
   FRIEND_REQUEST = 'Friend Request',
   DELETE_ROOM = 'Delete Room',
+  CREATE_ROOM = 'Create Room',
+  DELETE = 'Delete',
 }
 
 export enum HandleApprovalEnum {
@@ -96,4 +98,18 @@ export enum HandleApprovalEnum {
 export enum TogglePinMessageEnum {
   PIN = 'Pin',
   UNPIN = 'Unpin',
+}
+
+export enum MessageTypeSocketResponseEnum {
+  CREATE = 'Create',
+  EDIT = 'Edit',
+  RECALL = 'Recall',
+  SYSTEM = 'System',
+}
+
+export enum ClientSocketEventsEnum {
+  EXCEPTION = 'exception',
+  NOTIFICATION = 'notification',
+  MSG = 'msg',
+  RECEIVE_CREATE_ROOM = 'receive-create-room',
 }
