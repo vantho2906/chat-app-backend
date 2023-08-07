@@ -8,5 +8,3 @@ services:
     restart: always
     ports:
       - 10030:10030
-volumes:
-networks:
