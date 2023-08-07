@@ -7,6 +7,6 @@ services:
       dockerfile: Dockerfile
     restart: always
     ports:
-      - 3000:3000
+      - 10030:10030
 volumes:
 networks:
