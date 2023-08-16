@@ -108,4 +108,24 @@ export class AccountsController {
       null,
     );
   }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('search-by-name-or-email-return-friend-status/:keyword')
+  async searchByNameOrEmailAndReturnFriendStatus(
+    @Param('keyword') keyword: string,
+    @CurrentAccount() account: Account,
+  ) {
+    const [data, err] =
+      await this.accountsService.searchByNameOrEmailAndReturnFriendStatus(
+        account.id,
+        keyword,
+      );
+    return new ResponseObject(
+      HttpStatus.OK,
+      'Search by name or email success',
+      data,
+      null,
+    );
+  }
 }

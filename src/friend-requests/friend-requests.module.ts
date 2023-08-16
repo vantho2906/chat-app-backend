@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { FriendRequestsService } from './friend-requests.service';
 import { FriendRequestsController } from './friend-requests.controller';
 import { AccountsModule } from 'accounts/accounts.module';
@@ -11,8 +11,8 @@ import { Friend } from 'friends/entities/friend.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Account, FriendRequest, Friend]),
-    AccountsModule,
     FriendsModule,
+    forwardRef(() => AccountsModule),
   ],
   controllers: [FriendRequestsController],
   providers: [FriendRequestsService],
