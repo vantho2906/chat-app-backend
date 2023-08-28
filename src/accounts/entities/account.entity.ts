@@ -8,7 +8,6 @@ import {
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { GenderEnum, RoleEnum } from '../../etc/enums';
-import { NetworkFile } from '../../network-files/entities/networkFile.entity';
 import { Member } from '../../members/entities/member.entity';
 import { Approval } from '../../approvals/entities/approval.entity';
 import { FriendRequest } from '../../friend-requests/entities/friendRequest.entity';

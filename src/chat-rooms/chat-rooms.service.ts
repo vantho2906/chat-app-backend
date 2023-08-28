@@ -69,7 +69,7 @@ export class ChatRoomsService {
   }
 
   async isExistOwnRoom(userId: string) {
-    await this.chatRoomRepository.findOne({
+    return await this.chatRoomRepository.findOne({
       where: {
         type: ChatRoomTypeEnum.OWN,
         members: { account: { id: userId } },
@@ -88,7 +88,7 @@ export class ChatRoomsService {
       case ChatRoomTypeEnum.OWN:
         if (memberIDsAdded.length > 0)
           return [null, 'Own room must has only room creator'];
-        const isExistOwnRoom = this.isExistOwnRoom(self.id);
+        const isExistOwnRoom = await this.isExistOwnRoom(self.id);
         if (isExistOwnRoom) return [null, 'Already create own room'];
         room = await this.chatRoomRepository.create({
           type,
@@ -100,6 +100,7 @@ export class ChatRoomsService {
           ],
           avatarUrls: [self.avatarUrl],
         });
+        await this.chatRoomRepository.save(room);
         return [room, null];
         break;
       case ChatRoomTypeEnum.ONE_ON_ONE:

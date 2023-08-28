@@ -97,6 +97,7 @@ export class MessagesController {
     @Body() createMessageDto: CreateMessageDto,
   ) {
     const { type, roomId, text } = createMessageDto;
+    console.log(createMessageDto);
     console.log(text);
     const [data, err] = await this.messagesService.addMsg(
       type,
